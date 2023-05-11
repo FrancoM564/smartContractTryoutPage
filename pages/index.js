@@ -1,13 +1,64 @@
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
 import 'bootstrap/dist/css/bootstrap.css'
-
 import { useRef, useState } from 'react';
-
+const crypto = require("crypto-js")
+const IPFS = require('ipfs-mini')
 
 export default function Home() {
 
   const [file,setFile] = useState(null)
+  const [encryptedFile, setEncryptedFile] = useState(null)
+  const [decryptedFile, setDecryptedFile] = useState(null)
+  const client = new IPFS({host: 'ipfs.infura.io',port:5001,protocol:'https'})
+  let key = "llavesupersecreta123"
+
+ const onButtonPressed = async () => {
+    if (file == null){
+      console.log("No hay archivo cargado")
+      return
+    }
+    let fr = new FileReader()
+    fr.readAsArrayBuffer(file)
+    fr.onloadend = () =>{
+      manageOnLoadEndFR(fr.result)
+    }
+  }
+
+  const callEncrypt = async (argument) => {
+    const wordArray = crypto.lib.WordArray.create(argument)
+    const str = crypto.enc.Hex.stringify(wordArray)
+    let ct = crypto.AES.encrypt(str, key)
+    let ctstr = ct.toString()
+    return ctstr
+  }
+
+  const manageOnLoadEndFR = async (result) =>{
+      console.log(result)
+      let encriptedFile = await callEncrypt(result)
+      console.log(encriptedFile)
+      let hash = await addFileToIPFS(encriptedFile)
+      console.log(hash)
+
+  }
+
+  const addFileToIPFS = async (encodedStr) =>{
+
+    let testBuffer = new Buffer.from(encodedStr)
+    console.log(testBuffer)
+    console.log(client)
+    client.add(testBuffer, (error, file) => {
+      if (error){
+        console.log(error)
+      }
+
+      return(file)
+    })
+
+  }
+
+
+
 
 
   return (
@@ -30,7 +81,7 @@ export default function Home() {
         <div className='col'>
         </div>
         <div className='col text-center' >
-          <button type="button" class="btn btn-primary" id='buttonUpload'>Subir</button>
+          <button type="button" class="btn btn-primary" id='buttonUpload' onClick={onButtonPressed}>Subir</button>
         </div>
         <div className='col'>
         </div>
@@ -44,4 +95,6 @@ export default function Home() {
     </div>
 
   )
+
+  
 }
