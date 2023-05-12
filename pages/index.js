@@ -1,228 +1,104 @@
-import Head from 'next/head';
-import styles from '../styles/Home.module.css';
+
 import 'bootstrap/dist/css/bootstrap.css'
-import { useRef, useState } from 'react';
-const crypto = require("crypto-js")
-import { create } from 'ipfs-http-client'
-import * as fs from 'fs';
+import { useState } from 'react';
+const helper = require('../helpers/functions.js')
+import { redirect } from 'next/navigation';
 
 export default function Home() {
 
-  const [showDownload,setShowDownload] = useState(false)
   const [file,setFile] = useState(null)
-  const [fileHashLocation, setfileHashLocation] = useState(null)
+  const [watermarkImage,setWatermarkImage] = useState(null)
   let key = "llavesupersecret"
 
-  const createIPFSClient = async () =>{
-    const ipfs = await create(
-      {
-        host:"localhost",
-        port:5001,
-      }
-    )
-
-    return ipfs
-  }
-
  const onButtonPressed = async () => {
-    if (file == null){
+    if (file == null || watermarkImage == null){
       console.log("No hay archivo cargado")
       return
     }
     console.log("Empieza proceso de subida")
-     let fr = new FileReader()
-     fr.readAsDataURL(file)
-    fr.onloadend = () =>{
-      console.log(fr.result)
-      manageOnLoadEndFR(fr.result)
-    }
+    publishProcess()
   }
 
-  const manageOnLoadEndFR = async (result) =>{
-    
+  const publishProcess = async () =>{
 
-    let encriptedFile = await callEncrypt(result.replace("data:audio/mpeg;base64,", ""))
-    let hash = await addFileToIPFS(encriptedFile)
-    setfileHashLocation(hash)
-    setShowDownload(true)
-  }
+    console.log("Aplicando marca de agua")
 
-  const callEncrypt = async (fileReaderResult) => {
-    //const wordArray = crypto.lib.WordArray.create(fileReaderResult)
-    // const str = crypto.enc.Hex.stringify(wordArray)
+    const watermarkedAudio = await helper.getWatermarkedAudio(file,watermarkImage)
 
-    console.log(fileReaderResult)
+    console.log(watermarkedAudio)
 
-    let ct = crypto.AES.encrypt(fileReaderResult, key).toString()
+    console.log("Aplicando encriptacion")
 
-    console.log(ct)
-
-    return ct
-  }
-
-  const addFileToIPFS = async (encodedStr) =>{
-
-    let testBuffer = new Buffer.from(encodedStr)
-    let client = await createIPFSClient()
-
-    console.log("cliente creado, envio pendiente")
-
-    let result = await client.add(testBuffer)
-    console.log("envio terminado")
-    if (result){
-      return result.path
-    }
-    return null
-  }
-
-  const onButtonDownloadPressed = async () =>{
-
-    let encryptedStr = await ipfsDownload(fileHashLocation)
-
-    let strUrl = decrypt(encryptedStr)
-
-    saveFile(strUrl)
-  }
-
-  const ipfsDownload = async (hash) =>{
-    console.log(hash)
-
-    let client = await createIPFSClient()
-
-    const resp = await client.cat(hash)
-
-    let finalContent = []
-
-    for await (const chunk of resp) {
-      finalContent = [...finalContent, ...chunk]
-    }
-
-    const encryptedStr = Buffer.from(finalContent).toString()
-
-    return encryptedStr
-  }
-
-  const decrypt = (encryptedStr) =>{
+    const encryptedStr = await helper.applyAesEncryption(watermarkedAudio,key)
 
     console.log(encryptedStr)
 
-    const decrypted = crypto.AES.decrypt(encryptedStr,key)
+    console.log("Subiendo a IPFS")
 
-    console.log(decrypted)
+    const fileHashAddress = await helper.uploadToIPFS(encryptedStr)
 
-    var str = decrypted.toString(crypto.enc.Utf8)
+    console.log(fileHashAddress)
 
-    console.log(str)
-
-    return str
-  }
-
-  const saveFile = async (dataURL) =>{
-
-    dataURL = "data:audio/mpeg;base64,"+dataURL
-
-    console.log(dataURL)
-
-    const fs = require('file-saver')
-    // var arrayBuffer = new Uint8Array(byteArray)
-    // var blob = new Blob([arrayBuffer])//,{type:"audio/mpeg"})
-
-    const responseURL = await fetch(dataURL)
-    
-    const blob = await responseURL.blob()
-
-    console.log(blob)
-    fs.saveAs(blob,"filename.mp3")
-  }
-
-  function wordToByteArray(word, length) {
-    var ba = [],
-      i,
-      xFF = 0xFF;
-    if (length > 0)
-      ba.push(word >>> 24);
-    if (length > 1)
-      ba.push((word >>> 16) & xFF);
-    if (length > 2)
-      ba.push((word >>> 8) & xFF);
-    if (length > 3)
-      ba.push(word & xFF);
-  
-    return ba;
-  }
-
-  function wordArrayToByteArray(wordArray, length) {
-    if (wordArray.hasOwnProperty("sigBytes") && wordArray.hasOwnProperty("words")) {
-      length = wordArray.sigBytes;
-      wordArray = wordArray.words;
+    if (fileHashAddress == null){
+      console.log("Error en carga a ipfs")
+      return
     }
-  
-    var result = [],
-      bytes,
-      i = 0;
-    while (length > 0) {
-      bytes = wordToByteArray(wordArray[i], Math.min(4, length));
-      length -= bytes.length;
-      result.push(bytes);
-      i++;
-    }
-    return [].concat.apply([], result);
-  }
+
+    window.location = `/posts/downloadPage?hashPrueba=${fileHashAddress}`
+
+    //Colocar logica para conectar con contrato inteligente aqui
+    //deploySmartContract(fileHashAddress)
+    //para demo enviar a la pagina de descarga
+  } 
+
 
   const onFileSelectorChange = (target) => {
     if (target.files) {
-      const file = target.files[0]
-      console.log(file.type)
-      setFile(file)
+      const audioFile = target.files[0]
+      console.log(audioFile.type)
+      setFile(audioFile)
+    }
+  }
+
+  const onFileSelectorChange2 = async (target) => {
+    if (target.files) {
+      const imageFile = target.files[0]
+      const img = document.getElementById('imagePreview')
+      img.src = await helper.getDataUrlFromReader(imageFile)
+      setWatermarkImage(imageFile)
     }
   }
 
   return (
-    <div className='container'>
-      <h1 className='fw-bold fs-1 text-center'>
+    <div className='container text-center'>
+      <h1 className='fw-bold fs-1 '>
         Prueba de subida de archivos
       </h1>
 
-      <div className='p-3'>
-        {showDownload ? 
-        (<div>
-          <h1>Archivo por descargar</h1>
-        </div>) : 
-        (<div>
-          <label for="formFileLg" class="form-label">Large file input example</label>
-          <input class="form-control form-control-sm" id="formFile" type="file"
-          onChange={({target})=>{
-            onFileSelectorChange(target)
-          }}></input>
-        </div>)
+      <div className='row container'>
 
-        }
+        <div className='col container p-5'>
+          <label for="formFileLg" class="form-label">Carga audio</label>
+          <input class="form-control form-control-sm" id="audioFormFile" type="file" onChange={({target})=>{onFileSelectorChange(target)}}></input>
+
+          <div className='p-3'>
+          <button type="button" class="btn btn-primary" id='buttonDownload' onClick={onButtonPressed}>Subir</button>
+          </div>
+
+        </div>
+
+        <div className='col container p-5'>
+
+      <label for="formFileLg" class="form-label">Carga imagen para marca</label>
+          <input class="form-control form-control-sm" id="imageFormFile" type="file" onChange={({target})=>{onFileSelectorChange2(target)}}/>
+
+          {watermarkImage != null && <h2 className='p-3'>Imagen de marca de agua</h2>}
+          <div className='p-5'>
+            <img id='imagePreview'/>
+          </div>
+
       </div>
-      <div className='row'>
-        <div className='col'>
-        </div>
-        <div className='col text-center' >
-          {
-            showDownload ? (
-            <button type="button" 
-                    class="btn btn-danger" 
-                    id='buttonUpload' 
-                    onClick={onButtonDownloadPressed}>Descargar
-                    </button>)
-                    :
-            (<button type="button" 
-                      class="btn btn-primary" 
-                      id='buttonDownload' 
-                      onClick={onButtonPressed}>Subir
-                      </button>)
-          }
-        </div>
-        <div className='col'>
-        </div>
       </div>
     </div>
-
   )
-
-  
 }
