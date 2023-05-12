@@ -155,9 +155,9 @@ export function getImageInfo(imageDataUrl){
             ctx.drawImage(img, 0, 0);
 
             const imageData = {
-                pixelArray: ctx.getImageData(0, 0, img.width, img.height).data,
-                height: img.height,
-                width: img.width
+                pixelArray: ctx.getImageData(0, 0, 32, 32).data,
+                height: 32,
+                width: 32
             }
 
             resolve(imageData)
@@ -167,7 +167,7 @@ export function getImageInfo(imageDataUrl){
 
 export function embedWatermark(audioArrayBuffer, imageInfo){
     return new Promise((resolve,_)=>{
-        const imageSize = imageInfo.height * imageInfo.width * 4
+        const imageSize = imageInfo.height * imageInfo.width 
 
         const audioBytes = new Uint8Array(audioArrayBuffer)
 
