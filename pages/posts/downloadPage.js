@@ -12,17 +12,19 @@ export default function dowloadPage() {
 
     let params = new URLSearchParams(location.search);
 
+    console.log("Descargando archivo")
+
     let encryptedStr = await helper.downloadFromIPFS(params.get('hashPrueba'))
 
-    //console.log(encryptedStr)
+    console.log("Desencriptando archivo")
 
     let decryptStr = await helper.decryptAes(encryptedStr,key)
 
-    //console.log(decryptStr)
+    console.log("Reconstruyendo archivo")
 
     let fileBlob = await helper.getBlobFromDataString(decryptStr)
     
-    //console.log(fileBlob)
+    console.log("guardando")
 
     let imageDataUrl = await helper.getImageUrlDataFromWatermakedBlob(fileBlob)
 
@@ -31,6 +33,8 @@ export default function dowloadPage() {
     const img = document.getElementById('divImagen')
 
     img.append(imageDataUrl)
+
+    saveAs(fileBlob)
 
   }
 
