@@ -6,6 +6,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@polkadot/api": "^10.7.1",
+    "@polkadot/api-contract": "^10.7.1",
     "array-to-image": "^1.0.0",
     "audiobuffer-to-wav": "^1.0.0",
     "bootstrap": "^5.3.0-alpha3",
@@ -16,7 +18,9 @@
     "next": "latest",
     "node-file-encrypt": "^0.0.8",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "text-encoding": "^0.7.0",
+    "tweetnacl": "^1.0.3"
   },
   "browser": {
     "fs": false,

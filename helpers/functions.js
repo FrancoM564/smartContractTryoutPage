@@ -189,5 +189,3 @@ const encryptDataUrl = async (dataUrl,key) => {
 
     return ct
   }
-  
-
