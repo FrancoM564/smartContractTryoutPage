@@ -1,7 +1,8 @@
 import BN from "bn.js"
 import 'bootstrap/dist/css/bootstrap.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 const helper = require('../helpers/functions.js')
+const conect = require('../helpers/serverKeyAgreement.js')
 const nacl = require('tweetnacl')
 const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
 import { CodePromise, ContractPromise } from '@polkadot/api-contract'
@@ -12,9 +13,8 @@ export default function Home() {
   const [watermarkImage, setWatermarkImage] = useState(null)
   const [api, setApi] = useState()
   const [keyring, setKeyring] = useState()
-  // const keys = nacl.box.keyPair()
-  // const publicKey = keys.publicKey
-  // const secretKey = keys.secretKey
+  const publicKey = 0
+  const [secretKey, setSecretKey ] = useState(0)
 
   useEffect(() => {
     setup()
@@ -23,33 +23,39 @@ export default function Home() {
   let key = "llavesupersecret"
 
   const setup = async () => {
-    const provider = new WsProvider('ws://127.0.0.1:9944');
-    const api = await ApiPromise.create({ provider });
 
-    const keyring = new Keyring({ type: 'sr25519' });
+    const value = await conect.getRandomInt(15)
+    setSecretKey(value)
 
-    setApi(api)
-    setKeyring(keyring)
+    // const provider = new WsProvider('ws://127.0.0.1:9944');
+    // const api = await ApiPromise.create({ provider });
 
-    const [chain, nodeName, nodeVersion] = await Promise.all([
-      api.rpc.system.chain(),
-      api.rpc.system.name(),
-      api.rpc.system.version()
-    ]);
+    // const keyring = new Keyring({ type: 'sr25519' });
 
-    console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
+    // setApi(api)
+    // setKeyring(keyring)
+
+    // const [chain, nodeName, nodeVersion] = await Promise.all([
+    //   api.rpc.system.chain(),
+    //   api.rpc.system.name(),
+    //   api.rpc.system.version()
+    // ]);
+
+    // console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
   }
 
   const onButtonPressed = async () => {
-    // getKey((key) => {
-    //   console.log(key)
-    // })
+
+    
     if (file == null || watermarkImage == null){
       console.log("No hay archivo cargado")
       return
     }
-    console.log("Empieza proceso de subida")
-    publishProcess()
+    conect.getKey(publicKey,secretKey,(key) => {
+      console.log("Empieza proceso de subida")
+      publishProcess(key)
+    })
+    
   }
 
   async function instantiateContractCode(tx, account) {
@@ -82,7 +88,7 @@ export default function Home() {
     })
   }
 
-  const publishProcess = async () => {
+  const publishProcess = async (key) => {
 
     console.log("Aplicando marca de agua")
 
