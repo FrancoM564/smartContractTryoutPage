@@ -73,11 +73,19 @@ export async function uploadToIPFS(dataString){
 
     console.log("Cliente creado, envio pendiente")
 
-    let result = await client.add(testBuffer)
+    let x 
 
-    console.log("Envio terminado")
-    if (result){
-      return result.path
+    try {
+        
+        x = await client.add(testBuffer)
+
+    } catch (error) {
+        console.log(error)
+    }
+    
+    if (x){
+        console.log("Envio terminado")
+      return x.path
     }
     return null
 
