@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 const helper = require('../helpers/functions.js')
 const nacl = require('tweetnacl')
 const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
-import { CodePromise } from '@polkadot/api-contract'
+import { CodePromise, ContractPromise } from '@polkadot/api-contract'
 
 export default function Home() {
 
@@ -12,9 +12,9 @@ export default function Home() {
   const [watermarkImage, setWatermarkImage] = useState(null)
   const [api, setApi] = useState()
   const [keyring, setKeyring] = useState()
-  const keys = nacl.box.keyPair()
-  const publicKey = keys.publicKey
-  const secretKey = keys.secretKey
+  // const keys = nacl.box.keyPair()
+  // const publicKey = keys.publicKey
+  // const secretKey = keys.secretKey
 
   useEffect(() => {
     setup()
@@ -67,6 +67,21 @@ export default function Home() {
     })
   }
 
+  async function setReportContract(tx, account) {
+    return new Promise((resolve, _) => {
+      tx.signAndSend(
+        account,
+        (result) => {
+
+          if (result.isCompleted) {
+            resolve(result)
+
+          }
+        }
+      )
+    })
+  }
+
   const publishProcess = async () => {
 
     console.log("Aplicando marca de agua")
@@ -92,13 +107,13 @@ export default function Home() {
       return
     }
 
-    console.log("Creando Smart Contract")
+    console.log("Creando Smart Contract de Venta")
 
-    const contractAddress = await deploySmartContract(fileHashAddress)
+    const {buyAddress,reportAddress} = await deploySmartContract(fileHashAddress)
 
     console.log("Pasando a descarga")
 
-    window.location = `/posts/downloadPage?hashPrueba=${contractAddress}`
+    window.location = `/posts/downloadPage?hashPrueba=${buyAddress}&reportePrueba=${reportAddress}`
 
   }
 
@@ -120,33 +135,81 @@ export default function Home() {
         proofSize: new BN("10000000000"),
       });
       const storageDepositLimit = null
-      const salt = new Uint8Array()
       const alicePair = keyring.addFromUri('//Alice', { name: 'Alice default' })
   
-      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit, proofSize: 9000n }, "La bebe", 10n, fileHashAddress, "QmZ2Fg6zDt8p7SLsuVAL2spGAAY2rPp7JShAY3Xk6Ndt8o")
+      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, "La bebe", 10n, fileHashAddress, "QmZ2Fg6zDt8p7SLsuVAL2spGAAY2rPp7JShAY3Xk6Ndt8o")
+
+      let buyAddress = await instantiateContractCode(tx, alicePair)
+
+      let reportAddress = await deployReportContract(buyAddress,alicePair)
+
+      let x = await setNewReportAddress(reportAddress,buyAddress,alicePair)
   
-      let address = await instantiateContractCode(tx, alicePair)
-  
-      resolve(address.toString())
-  
-      /*const readContract = new ContractPromise(api, metadata, address);
-  
-      const { gasRequired, storageDeposit, result, output } = await readContract.query.recoverSongPrice(
-        alicePair.address,
-        {
-          gasLimit,
-          storageDepositLimit,
-        }
-      );
-  
-      console.log(output.toJSON());
-  
-      // the gas consumed for contract execution
-      console.log(gasRequired.toHuman());
-  
-      console.log(storageDeposit.toHuman())*/
+      resolve({
+        reportAddress: reportAddress,
+        buyAddress:buyAddress,
+      })
     })
 
+  }
+
+  const setNewReportAddress = async(reportAddress,buyAddress,owner) =>{
+    return new Promise(async (resolve,_) =>{
+
+      const metadataResponse = await fetch('http://localhost:3000/metadata.json');
+      const codeResponse = await fetch('http://localhost:3000/code.wasm');
+
+      const metadata = await metadataResponse.json();
+      var code = await codeResponse.arrayBuffer();
+
+      const wasm = new Uint8Array(code)
+      
+      const contract = new ContractPromise(api,metadata,buyAddress)
+      const gasLimit = api.registry.createType("WeightV2", {
+        refTime: new BN("100000000000"),
+        proofSize: new BN("10000000000"),
+      });
+      const storageDepositLimit = null
+
+      var tx = contract.tx.setReportContract(
+       {gasLimit, storageDepositLimit}
+       ,reportAddress )
+
+       const x = await setReportContract(tx,owner)
+
+       resolve(x)
+
+    })
+  }
+
+  const deployReportContract = async(buyContractAddress,owner) =>{
+    return new Promise ( async (resolve,_) => {
+
+      const metadataResponse = await fetch('http://localhost:3000/metadataReport.json');
+      const codeResponse = await fetch('http://localhost:3000/codeReport.wasm');
+
+      const metadata = await metadataResponse.json();
+      var code = await codeResponse.arrayBuffer();
+
+      const wasm = new Uint8Array(code)
+
+      const contract = new CodePromise(api,metadata,wasm)
+      const gasLimit = api.registry.createType("WeightV2", {
+        refTime: new BN("100000000000"),
+        proofSize: new BN("10000000000"),
+      });
+      const storageDepositLimit = null
+
+      var tx = contract.tx.new({gasLimit,storageDepositLimit},owner.address,buyContractAddress,"La bebe")
+
+      console.log(owner)
+
+      let contracAddress = await instantiateContractCode(tx,owner)
+
+      console.log(contracAddress)
+
+      resolve(contracAddress)
+    })
   }
 
 

@@ -160,9 +160,13 @@ export default function dowloadPage() {
         proofSize: new BN("10000000000"),
       });
 
-      const price = await querySongPrice(contractAddress)
+      var price = await querySongPrice(contractAddress)
 
-      const options = {storageDepositLimit : null, gasLimit :gasLimit,value:price.ok}
+      price = price.ok + price.ok/10 + price.ok/10
+
+      console.log(price)
+
+      const options = {storageDepositLimit : null, gasLimit :gasLimit,value:15}
 
       await contract.tx.buySong(
         options,
@@ -171,6 +175,7 @@ export default function dowloadPage() {
         (result) =>{
             if (result.isCompleted){
               if (result.dispatchError){
+                console.log(result.dispatchError)
                 resolve(true)
               }
               resolve(false)
