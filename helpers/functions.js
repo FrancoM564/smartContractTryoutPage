@@ -98,6 +98,8 @@ export async function decryptAes(encryptedStr,key){
 
     const decrypted = crypto.AES.decrypt(encryptedStr,key)
 
+    console.log(decrypted)
+
     var str = decrypted.toString(crypto.enc.Utf8)
     return str
 }

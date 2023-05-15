@@ -20,37 +20,35 @@ export default function Home() {
     setup()
   }, [])
 
-  let key = "llavesupersecret"
+  let keyT = "llavesupersecret"
 
   const setup = async () => {
 
     const value = await conect.getRandomInt(15)
     setSecretKey(value)
 
-    // const provider = new WsProvider('ws://127.0.0.1:9944');
-    // const api = await ApiPromise.create({ provider });
+    const provider = new WsProvider('ws://127.0.0.1:9944');
+    const api = await ApiPromise.create({ provider });
 
-    // const keyring = new Keyring({ type: 'sr25519' });
+    const keyring = new Keyring({ type: 'sr25519' });
 
-    // setApi(api)
-    // setKeyring(keyring)
+    setApi(api)
+    setKeyring(keyring)
 
-    // const [chain, nodeName, nodeVersion] = await Promise.all([
-    //   api.rpc.system.chain(),
-    //   api.rpc.system.name(),
-    //   api.rpc.system.version()
-    // ]);
+    const [chain, nodeName, nodeVersion] = await Promise.all([
+      api.rpc.system.chain(),
+      api.rpc.system.name(),
+      api.rpc.system.version()
+    ]);
 
-    // console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
+    console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
   }
 
   const onButtonPressed = async () => {
-
-    
-    if (file == null || watermarkImage == null){
-      console.log("No hay archivo cargado")
-      return
-    }
+    // if (file == null || watermarkImage == null){
+    //   console.log("No hay archivo cargado")
+    //   return
+    // }
     conect.getKey(publicKey,secretKey,(key) => {
       console.log("Empieza proceso de subida")
       publishProcess(key)

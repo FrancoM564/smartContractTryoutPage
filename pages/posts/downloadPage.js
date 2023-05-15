@@ -5,6 +5,7 @@ const helper = require('../../helpers/functions')
 import { useState, useEffect } from 'react'
 const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
 import { saveAs } from 'file-saver';
+import { getEncriptionKey } from '../../helpers/serverRetriveKeys';
 
 
 
@@ -14,7 +15,7 @@ export default function dowloadPage() {
   const [api, setApi] = useState()
   const [keyring, setKeyring] = useState()
   const [demoAccount,setDemoAccount] = useState()
-  let key = "llavesupersecret"
+  let keyT = "llavesupersecret"
 
   useEffect(() => {
     setup()
@@ -63,6 +64,15 @@ export default function dowloadPage() {
   }
 
   const onButtonDownloadPressed = async () =>{
+
+    const key = await getEncriptionKey()
+
+    if (key == "No se ha encontrado el archivo"){
+      console.log(key)
+      return
+    }
+
+    console.log(key)
 
     let params = new URLSearchParams(location.search);
 

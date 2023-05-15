@@ -52,7 +52,7 @@ async function processData(data,socket,privateKey,publicKey,doWithAgreedKey){
             const hash_object = crypto.createHash('sha256');
             hash_object.update(llave_buffer);
             const llave_string = hash_object.digest('hex').slice(0, 16);
-
+            
             doWithAgreedKey(llave_string)
 
             return JSON.stringify(message)
