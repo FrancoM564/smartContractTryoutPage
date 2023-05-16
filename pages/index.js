@@ -100,20 +100,22 @@ export default function Home() {
 
     console.log(encryptedStr)
 
-    console.log("Subiendo a IPFS")
+    console.log("Subiendo a IPFS la cancion")
 
     const fileHashAddress = await helper.uploadToIPFS(encryptedStr)
 
-    console.log(fileHashAddress)
+    console.log("Subiendo imagen a IPFS")
 
-    if (fileHashAddress == null) {
+    const imageHashAddress = await helper.uploadImageToIPFS(watermarkImage)
+
+    if (fileHashAddress == null || imageHashAddress == null) {
       console.log("Error en carga a ipfs")
       return
     }
 
     console.log("Creando Smart Contract de Venta")
 
-    const {buyAddress,reportAddress} = await deploySmartContract(fileHashAddress)
+    const {buyAddress,reportAddress} = await deploySmartContract(fileHashAddress,imageHashAddress)
 
     console.log("Pasando a descarga")
 
@@ -121,7 +123,7 @@ export default function Home() {
 
   }
 
-  const deploySmartContract = async (fileHashAddress) =>{ 
+  const deploySmartContract = async (fileHashAddress,imageHashAddress) =>{ 
 
     return new Promise( async (resolve,_) =>{
 
@@ -141,7 +143,7 @@ export default function Home() {
       const storageDepositLimit = null
       const alicePair = keyring.addFromUri('//Alice', { name: 'Alice default' })
   
-      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, "La bebe", 10n, fileHashAddress, "QmZ2Fg6zDt8p7SLsuVAL2spGAAY2rPp7JShAY3Xk6Ndt8o")
+      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, "La bebe", 10n, fileHashAddress, imageHashAddress)
 
       let buyAddress = await instantiateContractCode(tx, alicePair)
 

@@ -7,10 +7,7 @@ const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
 import { saveAs } from 'file-saver';
 import { getEncriptionKey } from '../../helpers/serverRetriveKeys';
 
-
-
-
-export default function dowloadPage() {
+export default function downloadPage() {
 
   const [api, setApi] = useState()
   const [keyring, setKeyring] = useState()

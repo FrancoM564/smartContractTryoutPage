@@ -2,18 +2,18 @@ const crypto = require("crypto-js")
 import { create } from 'ipfs-http-client'
 import { getDataUrlFromArr, getImgFromArr } from 'array-to-image';
 
-export async function getImageUrlDataFromWatermakedBlob(audioBlob){
+export async function getImageUrlDataFromWatermakedBlob(audioBlob) {
 
     const audioBytes = await getArrayBufferFromReader(audioBlob)
 
-    const imageSize = 32*32
+    const imageSize = 32 * 32
 
     // Crear un nuevo arreglo de bytes para almacenar la imagen extraída
     const imageBytes = new Uint8Array(imageSize);
-  
+
     // Recorrer los bits menos significativos del archivo de audio y almacenarlos en el arreglo de bytes de la imagen
     for (let i = 0; i < imageSize; i++) {
-      imageBytes[i] = audioBytes[i] & 1;
+        imageBytes[i] = audioBytes[i] & 1;
     }
 
     // Crear una imagen a partir del arreglo de bytes extraído
@@ -23,7 +23,7 @@ export async function getImageUrlDataFromWatermakedBlob(audioBlob){
     const context = canvas.getContext("2d");
     const imageData = context.createImageData(canvas.width, canvas.height);
 
-  // Asignar los valores de los bytes extraídos a los datos de la imagen
+    // Asignar los valores de los bytes extraídos a los datos de la imagen
     for (let i = 0; i < imageSize; i++) {
         imageData.data[i * 4] = imageBytes[i] * 255; // Componente R
         imageData.data[i * 4 + 1] = imageBytes[i] * 255; // Componente G
@@ -33,22 +33,22 @@ export async function getImageUrlDataFromWatermakedBlob(audioBlob){
 
     // Mostrar la imagen extraída en la página
     context.putImageData(imageData, 0, 0);
-    
+
 
     return canvas
 }
 
-export async function getBlobFromDataString(dataURL){
+export async function getBlobFromDataString(dataURL) {
 
     const responseURL = await fetch(dataURL)
-    
+
     const blob = await responseURL.blob()
 
     return blob
 
 }
 
-export async function downloadFromIPFS(locationHash){
+export async function downloadFromIPFS(locationHash) {
 
     let client = await createIPFSClient()
 
@@ -57,7 +57,7 @@ export async function downloadFromIPFS(locationHash){
     let finalContent = []
 
     for await (const chunk of resp) {
-      finalContent = [...finalContent, ...chunk]
+        finalContent = [...finalContent, ...chunk]
     }
 
     const encryptedStr = Buffer.from(finalContent).toString()
@@ -65,7 +65,35 @@ export async function downloadFromIPFS(locationHash){
     return encryptedStr
 }
 
-export async function uploadToIPFS(dataString){
+export async function uploadImageToIPFS(watermarkImage) {
+
+    return new Promise(async (resolve, _) => {
+
+        let buffer = await getArrayBufferFromReader(watermarkImage)
+
+        console.log(buffer)
+
+        let send = new Buffer.from(buffer)
+        const image = new Blob([send], { type: watermarkImage.type });
+        let client = await createIPFSClient()
+
+        try {
+
+            let x = await client.add(image)
+
+            resolve(x.path)
+
+        } catch (error) {
+            console.log(error)
+
+            resolve(null)
+        }
+
+    })
+
+}
+
+export async function uploadToIPFS(dataString) {
     //Devuelve el hash(dirección del archivo en IPFS)
     let testBuffer = new Buffer.from(dataString)
 
@@ -73,38 +101,38 @@ export async function uploadToIPFS(dataString){
 
     console.log("Cliente creado, envio pendiente")
 
-    let x 
+    let x
 
     try {
-        
+
         x = await client.add(testBuffer)
 
     } catch (error) {
         console.log(error)
     }
-    
-    if (x){
+
+    if (x) {
         console.log("Envio terminado")
-      return x.path
+        return x.path
     }
     return null
 
 }
 
-export const createIPFSClient = async () =>{
+export const createIPFSClient = async () => {
     const ipfs = await create(
-      {
-        host:"localhost",
-        port:5001,
-      }
+        {
+            host: "localhost",
+            port: 5001,
+        }
     )
 
     return ipfs
-  }
+}
 
-export async function decryptAes(encryptedStr,key){
+export async function decryptAes(encryptedStr, key) {
 
-    const decrypted = crypto.AES.decrypt(encryptedStr,key)
+    const decrypted = crypto.AES.decrypt(encryptedStr, key)
 
     console.log(decrypted)
 
@@ -112,18 +140,18 @@ export async function decryptAes(encryptedStr,key){
     return str
 }
 
-export async function applyAesEncryption(audioBlob, key){
+export async function applyAesEncryption(audioBlob, key) {
 
     //Devuelve un string encriptado
 
     const audioDataUrl = await getDataUrlFromReader(audioBlob)
 
-    const encryptedStr = await encryptDataUrl(audioDataUrl,key)
+    const encryptedStr = await encryptDataUrl(audioDataUrl, key)
 
     return encryptedStr
 }
 
-export async function getWatermarkedAudio(audioFile,watermarkImage){
+export async function getWatermarkedAudio(audioFile, watermarkImage) {
     //Debe devolver un audio en formato Blob
 
     const watermarkImageDataUrl = await getDataUrlFromReader(watermarkImage)
@@ -132,34 +160,34 @@ export async function getWatermarkedAudio(audioFile,watermarkImage){
 
     const audioArrayBuffer = await getArrayBufferFromReader(audioFile)
 
-    const watermarkedAudioBlob = await embedWatermark(audioArrayBuffer,imageInfo)
+    const watermarkedAudioBlob = await embedWatermark(audioArrayBuffer, imageInfo)
 
     return watermarkedAudioBlob
 
 }
 
-export function getDataUrlFromReader(blobOrFile){
-    return new Promise((resolve,_)=>{
+export function getDataUrlFromReader(blobOrFile) {
+    return new Promise((resolve, _) => {
         const reader = new FileReader()
         reader.onloadend = () => resolve(reader.result)
         reader.readAsDataURL(blobOrFile)
     })
 }
 
-export function getArrayBufferFromReader(blobOrFile){
-    return new Promise((resolve,_)=>{
+export function getArrayBufferFromReader(blobOrFile) {
+    return new Promise((resolve, _) => {
         const reader = new FileReader()
         reader.onloadend = () => resolve(reader.result)
         reader.readAsArrayBuffer(blobOrFile)
     })
 }
 
-export function getImageInfo(imageDataUrl){
+export function getImageInfo(imageDataUrl) {
 
-    return new Promise((resolve,_) => {
+    return new Promise((resolve, _) => {
         const img = document.createElement('img')
         img.src = imageDataUrl
-        img.onload = () =>{
+        img.onload = () => {
             const cvs = document.createElement("canvas");
             const ctx = cvs.getContext("2d");
             ctx.drawImage(img, 0, 0);
@@ -175,27 +203,27 @@ export function getImageInfo(imageDataUrl){
     })
 }
 
-export function embedWatermark(audioArrayBuffer, imageInfo){
-    return new Promise((resolve,_)=>{
-        const imageSize = imageInfo.height * imageInfo.width 
+export function embedWatermark(audioArrayBuffer, imageInfo) {
+    return new Promise((resolve, _) => {
+        const imageSize = imageInfo.height * imageInfo.width
 
         const audioBytes = new Uint8Array(audioArrayBuffer)
 
-        for (let i = 0; i<imageSize; i++){
+        for (let i = 0; i < imageSize; i++) {
             const imageBit = (imageInfo.pixelArray[i] & 1) === 1 ? 1 : 0;
 
             audioBytes[i] = (audioBytes[i] & 0xFE) | imageBit;
         }
 
-        const watermarkedAudio= new Blob([audioBytes],{ type: "audio/mpeg" })
+        const watermarkedAudio = new Blob([audioBytes], { type: "audio/mpeg" })
 
         resolve(watermarkedAudio)
     })
 }
 
-const encryptDataUrl = async (dataUrl,key) => {
+const encryptDataUrl = async (dataUrl, key) => {
 
     let ct = crypto.AES.encrypt(dataUrl, key).toString()
 
     return ct
-  }
+}
