@@ -142,8 +142,10 @@ export default function Home() {
       });
       const storageDepositLimit = null
       const alicePair = keyring.addFromUri('//Alice', { name: 'Alice default' })
+
+      console.log("Usando cuenta de Alice")
   
-      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, "La bebe", 10n, fileHashAddress, imageHashAddress)
+      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, "La bebe", 100000n, fileHashAddress, imageHashAddress)
 
       let buyAddress = await instantiateContractCode(tx, alicePair)
 

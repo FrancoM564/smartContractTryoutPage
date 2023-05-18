@@ -37,6 +37,9 @@ export default function downloadPage() {
 
     setDemoAccount(Bob)
 
+    console.log("Cuenta configurada como bob")
+        console.log(Bob)
+
     const [chain, nodeName, nodeVersion] = await Promise.all([
       api.rpc.system.chain(),
       api.rpc.system.name(),
@@ -173,7 +176,7 @@ export default function downloadPage() {
 
       console.log(price)
 
-      const options = {storageDepositLimit : null, gasLimit :gasLimit,value:15}
+      const options = {storageDepositLimit : null, gasLimit :gasLimit,value:BigInt(price)}
 
       await contract.tx.buySong(
         options,
@@ -204,7 +207,6 @@ export default function downloadPage() {
         proofSize: new BN("10000000000"),
       });
 
-      const options = {storageDepositLimit : null, gasLimit :gasLimit}
 
       const contract = new ContractPromise(api,metadata,contractAddress)
 

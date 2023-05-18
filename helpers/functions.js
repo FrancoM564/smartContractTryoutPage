@@ -38,6 +38,28 @@ export async function getImageUrlDataFromWatermakedBlob(audioBlob) {
     return canvas
 }
 
+export async function getImageBitArray(audioBlob){
+
+    return new Promise(async (resolve, _) => {
+        
+        const audioBytes = await getArrayBufferFromReader(audioBlob)
+
+        const imageSize = 32 * 32
+    
+        // Crear un nuevo arreglo de bytes para almacenar la imagen extraída
+        const imageBytes = new Uint8Array(imageSize);
+    
+        // Recorrer los bits menos significativos del archivo de audio y almacenarlos en el arreglo de bytes de la imagen
+        for (let i = 0; i < imageSize; i++) {
+            imageBytes[i] = audioBytes[i] & 1;
+        }
+
+        resolve(imageBytes)
+
+    })
+
+}
+
 export async function getBlobFromDataString(dataURL) {
 
     const responseURL = await fetch(dataURL)
@@ -63,6 +85,24 @@ export async function downloadFromIPFS(locationHash) {
     const encryptedStr = Buffer.from(finalContent).toString()
 
     return encryptedStr
+}
+
+export async function downloadFromIPFSRaw(locationHash){
+
+    return new Promise(async (resolve, reject) => {
+        let client = await createIPFSClient()
+
+        const resp = await client.cat(locationHash)
+
+        let finalContent = []
+
+        for await (const chunk of resp) {
+            finalContent = [...finalContent, ...chunk]
+        }
+        
+        resolve(finalContent)
+
+    })
 }
 
 export async function uploadImageToIPFS(watermarkImage) {
