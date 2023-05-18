@@ -162,22 +162,30 @@ export default function reportPage() {
             const contract = new ContractPromise(api, metadata, reportAddress)
             const gasLimit = api.registry.createType("WeightV2", {
                 refTime: new BN("100000000000"),
-                proofSize: new BN("10000000000"),
+                proofSize: new BN("100000000000"),
             });
 
             const options = {storageDepositLimit : null, gasLimit :gasLimit}
 
+            const tx = contract.tx.payReporterAndOwner(
+                options,
+                100n,
+                reportAddress
+            )
+
             try {
                 
-
-                const result = await contract.query.payReporterAndOwner(
-                    demoAccount.address,
-                    options,
-                    10000n,
-                    "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+                tx.signAndSend(
+                    demoAccount,
+                    (result) =>{
+                        if (result.isError){
+                            console.log(result)
+                        }
+                        if(result.isCompleted){
+                            console.log(result)
+                        }
+                    }
                 )
-
-                console.log(result)
 
                 //resolve(output.toJSON())
 
@@ -192,6 +200,8 @@ export default function reportPage() {
 
     const doOnButtonReportPressed = async () =>{
         const reportAddress = document.getElementById('reportedAddress').value
+
+        console.log(reportAddress)
 
         const responseContract = await giveRewardToReporterAndOwner(reportAddress)
     
