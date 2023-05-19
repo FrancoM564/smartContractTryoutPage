@@ -155,11 +155,13 @@ export default function reportPage() {
     const giveRewardToReporterAndOwner = async(reportAddress) =>{
         return new Promise(async(resolve, reject) => {
 
+            const contractAddressInput = document.getElementById("contractAddress").value
+
             const metadataResponse = await fetch('http://localhost:3000/metadataReport.json');
 
             const metadata = await metadataResponse.json();
 
-            const contract = new ContractPromise(api, metadata, reportAddress)
+            const contract = new ContractPromise(api, metadata, contractAddressInput)
             const gasLimit = api.registry.createType("WeightV2", {
                 refTime: new BN("100000000000"),
                 proofSize: new BN("100000000000"),
