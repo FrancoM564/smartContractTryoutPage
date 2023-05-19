@@ -145,7 +145,7 @@ export default function Home() {
 
       console.log("Usando cuenta de Alice")
   
-      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, "La bebe", 100000n, fileHashAddress, imageHashAddress)
+      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, "Welcome to the jungle", 1000000000000000n, fileHashAddress, imageHashAddress)
 
       let buyAddress = await instantiateContractCode(tx, alicePair)
 

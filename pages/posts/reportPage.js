@@ -4,6 +4,7 @@ import { ContractPromise } from '@polkadot/api-contract';
 const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
 import { useState, useEffect } from "react";
 import BN from "bn.js"
+import { re } from 'mathjs';
 const compare = require('resemblejs').compare
 
 
@@ -90,7 +91,8 @@ export default function reportPage() {
 
             const imageUrl = await getImageDataUrl(imageBytes)
 
-            setImageExtracted(imageUrl)
+            //Cambiar a imagen extraida una vez se logre el marcaje de agua
+            setImageExtracted(imageToCompare)
 
             const areSameImages = await compareImages()
 
@@ -116,8 +118,10 @@ export default function reportPage() {
                     console.log(err)
                 }else{
                     if (data.misMatchPercentage > 5){
+                        setComparisonResult("No son iguales")
                         resolve(false)
                     }else{
+                        setComparisonResult("Son iguales")
                         resolve(true)
                     }
                 }
@@ -171,7 +175,7 @@ export default function reportPage() {
 
             const tx = contract.tx.payReporterAndOwner(
                 options,
-                100n,
+                1000000000000000n,
                 reportAddress
             )
 
@@ -180,11 +184,14 @@ export default function reportPage() {
                 tx.signAndSend(
                     demoAccount,
                     (result) =>{
-                        if (result.isError){
-                            console.log(result)
-                        }
                         if(result.isCompleted){
-                            console.log(result)
+                            if(result.dispatchError){
+                                console.log(result.dispatchError)
+                            }else{
+                                console.log(result)
+                                console.log("Transferencias completadas")
+                            }
+                            
                         }
                     }
                 )
@@ -207,7 +214,7 @@ export default function reportPage() {
 
         const responseContract = await giveRewardToReporterAndOwner(reportAddress)
     
-        console.log(responseContract)
+        //console.log(responseContract)
     }
 
     const getImageDataUrl = async (imageRawArray) =>{

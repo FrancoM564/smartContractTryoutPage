@@ -64,7 +64,7 @@ export async function getBlobFromDataString(dataURL) {
 
     const responseURL = await fetch(dataURL)
 
-    const blob = await responseURL.blob()
+    const blob = await responseURL.blob()   
 
     return blob
 
