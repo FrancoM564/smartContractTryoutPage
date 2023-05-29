@@ -191,18 +191,59 @@ export async function applyAesEncryption(audioBlob, key) {
     return encryptedStr
 }
 
-export async function getWatermarkedAudio(audioFile, watermarkImage) {
-    //Debe devolver un audio en formato Blob
-
-    const watermarkImageDataUrl = await getDataUrlFromReader(watermarkImage)
-
-    const imageInfo = await getImageInfo(watermarkImageDataUrl)
-
+async function arrayBufferToBytesArray(audioFile){
     const audioArrayBuffer = await getArrayBufferFromReader(audioFile)
 
-    const watermarkedAudioBlob = await embedWatermark(audioArrayBuffer, imageInfo)
+    return new Uint8Array(audioArrayBuffer)
+}
 
-    return watermarkedAudioBlob
+function integerToBitArray(integer) {
+    var bitArray = [];
+    for (var i = 7; i >= 0; i--) {
+      var bit = (integer >> i) & 1;
+      bitArray.push(bit);
+    }
+    return bitArray;
+  }
+
+function byteArrayTobitArray(byteArray){
+    return new Promise((resolve, reject) => {
+        //MODIFICAR, tomar en cuenta que solo se transforma el byte seleccionado, no se forma un array de bits, demasiado procesamiento
+        var bitArray = new Uint8Array()
+
+        for (let index = 0; index < byteArray.length; index++) {
+            console.log(integerToBitArray(byteArray[index]))
+        }
+
+        resolve(bitArray)
+
+    })
+}
+
+export async function getWatermarkedAudio(audioFile, watermarkImageByteArray) {
+    //Debe devolver un audio en formato Blob
+
+    console.log(audioFile)
+
+    console.log(watermarkImageByteArray)
+
+    const audioFileInBytes = await arrayBufferToBytesArray(audioFile)
+
+    console.log(audioFileInBytes)
+
+    const imageInBits = await byteArrayTobitArray(watermarkImageByteArray)
+
+    console.log("Bits de la imagen :", imageInBits)
+
+    //const watermarkImageDataUrl = await getDataUrlFromReader(watermarkImage)
+
+    //const imageInfo = await getImageInfo(watermarkImageDataUrl)
+
+    //const audioArrayBuffer = await getArrayBufferFromReader(audioFile)
+
+    //const watermarkedAudioBlob = await embedWatermark(audioArrayBuffer, imageInfo)
+
+    return audioFile
 
 }
 

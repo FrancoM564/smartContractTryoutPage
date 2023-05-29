@@ -6,18 +6,19 @@ const conect = require('../helpers/serverKeyAgreement.js')
 const nacl = require('tweetnacl')
 const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
 import { CodePromise, ContractPromise } from '@polkadot/api-contract'
+import { im } from "mathjs"
 
 export default function Home() {
 
   const [file, setFile] = useState(null)
-  const [watermarkImage, setWatermarkImage] = useState(null)
+  const [watermarkImageBytesArray, setWatermarkImageBytesArray] = useState(null)
   const [api, setApi] = useState()
   const [keyring, setKeyring] = useState()
   const publicKey = 0
   const [secretKey, setSecretKey ] = useState(0)
 
   useEffect(() => {
-    setup()
+    //setup()
   }, [])
 
   let keyT = "llavesupersecret"
@@ -45,14 +46,16 @@ export default function Home() {
   }
 
   const onButtonPressed = async () => {
-    // if (file == null || watermarkImage == null){
-    //   console.log("No hay archivo cargado")
-    //   return
-    // }
-    conect.getKey(publicKey,secretKey,(key) => {
-      console.log("Empieza proceso de subida")
-      publishProcess(key)
-    })
+     if (file == null || watermarkImageBytesArray == null){
+       console.log("No hay archivo cargado")
+       return
+     }
+
+    publishProcess("12345678w")
+    //conect.getKey(publicKey,secretKey,(key) => {
+      //console.log("Empieza proceso de subida")
+      //publishProcess(key)
+    //})
     
   }
 
@@ -90,7 +93,9 @@ export default function Home() {
 
     console.log("Aplicando marca de agua")
 
-    const watermarkedAudio = await helper.getWatermarkedAudio(file, watermarkImage)
+    const watermarkedAudio = await helper.getWatermarkedAudio(file, watermarkImageBytesArray)
+
+    return
 
     console.log(watermarkedAudio)
 
@@ -232,9 +237,39 @@ export default function Home() {
   const onFileSelectorChange2 = async (target) => {
     if (target.files) {
       const imageFile = target.files[0]
-      const img = document.getElementById('imagePreview')
-      img.src = await helper.getDataUrlFromReader(imageFile)
-      setWatermarkImage(imageFile)
+
+      const reader = new FileReader()
+
+      reader.onload = (e) =>{
+
+        const img = new Image()
+
+        img.src = e.target.result
+
+        img.onload = () =>{
+          const width = img.width
+          const height = img.height
+          if (width === 32 && height === 32){
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            canvas.width = width
+            canvas.height = height
+            ctx.drawImage(img,0,0,width,height)
+            const imageData = ctx.getImageData(0,0,width,height)
+            const pixelData = imageData.data
+            console.log(pixelData)
+            console.log('Numero de bytes: ',pixelData.length)
+            const imgDiv = document.getElementById('imagePreview')
+            imgDiv.src = canvas.toDataURL()
+            setWatermarkImageBytesArray(pixelData)
+          }else{
+            console.log("No es de 32x32")
+          }
+        }
+
+      }
+
+      reader.readAsDataURL(imageFile)
     }
   }
   /*
@@ -320,7 +355,7 @@ export default function Home() {
           <label for="formFileLg" class="form-label">Carga imagen para marca</label>
           <input class="form-control form-control-sm" id="imageFormFile" type="file" onChange={({ target }) => { onFileSelectorChange2(target) }} />
 
-          {watermarkImage != null && <h2 className='p-3'>Imagen de marca de agua</h2>}
+          {watermarkImageBytesArray != null && <h2 className='p-3'>Imagen de marca de agua</h2>}
           <div className='p-5'>
             <img id='imagePreview' />
           </div>
