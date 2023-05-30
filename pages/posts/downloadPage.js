@@ -102,11 +102,7 @@ export default function downloadPage() {
     let imageDataUrl = await helper.getImageDataUrlFromWatermarkedAudio(fileBlob)
 
     console.log(imageDataUrl);
-
-    const img = document.getElementById("divImagen");
-
-    img.append(imageDataUrl);
-
+    
     let filename = await querySongName(params.get("hashPrueba"))
 
     console.log(filename)

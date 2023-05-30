@@ -11,6 +11,7 @@ export default function Home() {
 
   const [file, setFile] = useState(null)
   const [watermarkImageBytesArray, setWatermarkImageBytesArray] = useState(null)
+  const [watermarkImageFile, setwatermarkImageFile] = useState(null)
   const [api, setApi] = useState()
   const [keyring, setKeyring] = useState()
   const publicKey = 0
@@ -105,7 +106,7 @@ export default function Home() {
 
     console.log("Subiendo imagen a IPFS")
 
-    const imageHashAddress = await helper.uploadImageToIPFS(watermarkImage)
+    const imageHashAddress = await helper.uploadImageToIPFS(watermarkImageFile)
 
     if (fileHashAddress == null || imageHashAddress == null) {
       console.log("Error en carga a ipfs")
@@ -256,6 +257,7 @@ export default function Home() {
             const imgDiv = document.getElementById('imagePreview')
             imgDiv.src = canvas.toDataURL()
             setWatermarkImageBytesArray(pixelData)
+            setwatermarkImageFile(imageFile)
           }else{
             console.log("No es de 32x32")
           }
