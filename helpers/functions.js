@@ -277,6 +277,12 @@ function makeWatermarkedAudio(imageByteArray, audioByteArray) {
   });
 }
 
+export async function getImageDataUrlFromWatermarkedAudio(watermarkedAudio){
+  const dataArrayOfImagePixels = await getImageByteArrayFromWatermarkedAudio(watermarkedAudio)
+
+  return transformPixelDataToImageUrl(dataArrayOfImagePixels)
+}
+
 export function getImageByteArrayFromWatermarkedAudio(watermarkedAudioBlob){
     return new Promise(async (resolve, reject) => {
 

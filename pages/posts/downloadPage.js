@@ -99,22 +99,20 @@ export default function downloadPage() {
 
     console.log("guardando");
 
-    // let imageDataUrl = await helper.getImageUrlDataFromWatermakedBlob(fileBlob);
+    let imageDataUrl = await helper.getImageDataUrlFromWatermarkedAudio(fileBlob)
 
-    // console.log(imageDataUrl);
+    console.log(imageDataUrl);
 
-    // const img = document.getElementById("divImagen");
+    const img = document.getElementById("divImagen");
 
-    // img.append(imageDataUrl);
+    img.append(imageDataUrl);
 
     let filename = await querySongName(params.get("hashPrueba"))
 
     console.log(filename)
 
     var name = filename.ok
-
-
-
+    
     saveAs(fileBlob,name,{type:"audio/mp3"});
   };
 

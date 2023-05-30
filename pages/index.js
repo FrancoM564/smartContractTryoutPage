@@ -17,7 +17,7 @@ export default function Home() {
   const [secretKey, setSecretKey ] = useState(0)
 
   useEffect(() => {
-    //setup()
+    setup()
   }, [])
 
   const setup = async () => {
@@ -48,11 +48,10 @@ export default function Home() {
        return
      }
 
-    publishProcess("12345678w")
-    //conect.getKey(publicKey,secretKey,(key) => {
-      //console.log("Empieza proceso de subida")
-      //publishProcess(key)
-    //})
+    conect.getKey(publicKey,secretKey,(key) => {
+      console.log("Empieza proceso de subida")
+      publishProcess(key)
+    })
     
   }
 
