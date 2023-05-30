@@ -11,7 +11,6 @@ export default function downloadPage() {
   const [api, setApi] = useState();
   const [keyring, setKeyring] = useState();
   const [demoAccount, setDemoAccount] = useState();
-  let keyT = "llavesupersecret";
 
   useEffect(() => {
     setup();

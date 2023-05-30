@@ -3,10 +3,9 @@ import 'bootstrap/dist/css/bootstrap.css'
 import { useState, useEffect, useContext } from 'react'
 const helper = require('../helpers/functions.js')
 const conect = require('../helpers/serverKeyAgreement.js')
-const nacl = require('tweetnacl')
 const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
 import { CodePromise, ContractPromise } from '@polkadot/api-contract'
-import { im } from "mathjs"
+import { saveAs } from "file-saver"
 
 export default function Home() {
 
@@ -20,8 +19,6 @@ export default function Home() {
   useEffect(() => {
     //setup()
   }, [])
-
-  let keyT = "llavesupersecret"
 
   const setup = async () => {
 
@@ -95,10 +92,8 @@ export default function Home() {
 
     const watermarkedAudio = await helper.getWatermarkedAudio(file, watermarkImageBytesArray)
 
-    return
-
     console.log(watermarkedAudio)
-
+    
     console.log("Aplicando encriptacion")
 
     const encryptedStr = await helper.applyAesEncryption(watermarkedAudio, key)
