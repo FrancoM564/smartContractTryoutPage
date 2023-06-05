@@ -18,7 +18,7 @@ export default function Home() {
   const [secretKey, setSecretKey ] = useState(0)
 
   useEffect(() => {
-    setup()
+    //setup()
   }, [])
 
   const setup = async () => {
@@ -49,10 +49,12 @@ export default function Home() {
        return
      }
 
-    conect.getKey(publicKey,secretKey,(key) => {
-      console.log("Empieza proceso de subida")
-      publishProcess(key)
-    })
+     publishProcess("key")
+
+    //conect.getKey(publicKey,secretKey,(key) => {
+      //console.log("Empieza proceso de subida")
+      //publishProcess(key)
+    //})
     
   }
 
@@ -93,6 +95,10 @@ export default function Home() {
     const watermarkedAudio = await helper.getWatermarkedAudio(file, watermarkImageBytesArray)
 
     console.log(watermarkedAudio)
+
+    saveAs(watermarkedAudio,"PruebaAudio")
+
+    return
     
     console.log("Aplicando encriptacion")
 

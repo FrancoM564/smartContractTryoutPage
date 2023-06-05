@@ -179,10 +179,10 @@ function calcBitIndexToReplace(bitArray) {
   }
 
   if (bitArray[1] == 1) {
-    return 6;
+    return 7;
   }
 
-  return 5;
+  return 7;
 }
 
 function calcNextSampleToReplace(bitArray){
@@ -232,6 +232,23 @@ function bitArrayToInteger(bitArray) {
     integer = (integer << 1) | bitArray[i];
   }
   return integer;
+}
+
+function getSamples(audioBytes) {
+  // Create a new array to store the samples.
+  const samples = new Int16Array(audioBytes.length / 2);
+
+  // Iterate through the audio bytes, two bytes at a time.
+  for (let i = 0; i < audioBytes.length; i += 2) {
+    // Convert the two bytes into a 16-bit integer.
+    const sample = audioBytes[i] | (audioBytes[i + 1] << 8);
+
+    // Store the 16-bit integer in the samples array.
+    samples[i / 2] = sample;
+  }
+
+  // Return the samples array.
+  return samples;
 }
 
 function makeWatermarkedAudio(imageByteArray, audioByteArray) {
@@ -343,6 +360,8 @@ export async function getWatermarkedAudio(audioFile, watermarkImageByteArray) {
 
   console.log(watermarkImageByteArray);
 
+  const audioArrayBuffer = await getArrayBufferFromReader(audioFile)
+
   const audioFileInBytes = await arrayBufferToBytesArray(audioFile);
 
   if (audioFileInBytes.length < watermarkImageByteArray.length * 9) {
@@ -350,7 +369,15 @@ export async function getWatermarkedAudio(audioFile, watermarkImageByteArray) {
     return;
   }
 
-  //console.log("Audio sin procesar: ", audioFileInBytes);
+  console.log("Audio sin procesar: ", audioFileInBytes);
+
+  var temp = getSamples(audioFileInBytes)
+
+  console.log("Muestras de audio en enteros: ",temp)
+
+  
+
+  console.log("Muestras alteradas: ",temp)
 
   const audioWithWatermarkInBytes = await makeWatermarkedAudio(
     watermarkImageByteArray,
@@ -359,10 +386,29 @@ export async function getWatermarkedAudio(audioFile, watermarkImageByteArray) {
 
   //console.log("Audio con marca de agua: ", audioWithWatermarkInBytes);
 
-  const watermarkedAudioBlob = new Blob([audioWithWatermarkInBytes],{type:"audio/mp3"})
+  const watermarkedAudioBlob = getBlobFromInt16Array(temp)//new Blob([audioWithWatermarkInBytes],{type:"audio/mp3"})
 
   return watermarkedAudioBlob;
 }
+
+function getBlobFromInt16Array(int16Array) {
+  // Create a new array to store the bytes.
+  const bytes = new Uint8Array(int16Array.length * 2);
+
+  // Iterate through the integer array, two bytes at a time.
+  for (let i = 0; i < int16Array.length; i++) {
+    // Convert the two bytes into a byte.
+    const byte = int16Array[i] & 0xFF;
+
+    // Store the byte in the bytes array.
+    bytes[i * 2] = byte;
+    bytes[i * 2 + 1] = (int16Array[i] >> 8) & 0xFF;
+  }
+
+  // Create a new blob from the bytes array.
+  return new Blob([bytes],{type:"audio/mp3"});
+}
+
 
 export function getDataUrlFromReader(blobOrFile) {
   return new Promise((resolve, _) => {
