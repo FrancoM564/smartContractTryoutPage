@@ -174,47 +174,57 @@ async function arrayBufferToBytesArray(audioFile) {
 }
 
 function calcBitIndexToReplace(bitArray) {
-  if (bitArray[0] == 1) {
-    return 7;
-  }
+  const defaultLength = bitArray.length
 
   if (bitArray[1] == 1) {
-    return 7;
+    return defaultLength - 1;
   }
 
-  return 7;
+  if (bitArray[2] == 1) {
+    return defaultLength - 2;
+  }
+
+  return defaultLength - 3;
 }
 
-function calcNextSampleToReplace(bitArray){
-    if (bitArray[0] == 1){
-        if (bitArray[1] == 1){
-            if (bitArray[2] == 1){
-                return 8
-            }else{
-                return 7
-            }
-        }else{
-            if (bitArray[2] == 1){
-                return 6
-            }else{
-                return 5
-            }
-        }
-    }else{
-        if (bitArray[1] == 1){
-            if (bitArray[2] == 1){
-                return 4
-            }else{
-                return 3
-            }
-        }else{
-            if (bitArray[2] == 1){
-                return 2
-            }else{
-                return 1
-            }
-        }
+function calcNextSampleToReplace(bitArray) {
+
+  var initialIndex = 0
+
+  if (bitArray.length == 17){
+    initialIndex = 1
+  }
+
+
+  if (bitArray[initialIndex] == 1) {
+    if (bitArray[initialIndex + 1] == 1) {
+      if (bitArray[initialIndex + 2] == 1) {
+        return 8;
+      } else {
+        return 7;
+      }
+    } else {
+      if (bitArray[initialIndex + 2] == 1) {
+        return 6;
+      } else {
+        return 5;
+      }
     }
+  } else {
+    if (bitArray[initialIndex + 1] == 1) {
+      if (bitArray[initialIndex + 2] == 1) {
+        return 4;
+      } else {
+        return 3;
+      }
+    } else {
+      if (bitArray[initialIndex + 2] == 1) {
+        return 2;
+      } else {
+        return 1;
+      }
+    }
+  }
 }
 
 function integerToBitArray(integer) {
@@ -224,6 +234,44 @@ function integerToBitArray(integer) {
     bitArray.push(bit);
   }
   return bitArray;
+}
+
+function int16ToBits(numero) {
+  let es_negativo = false;
+  if (numero < 0) {
+    es_negativo = true;
+    numero = Math.abs(numero);
+  }
+
+  let bits = numero.toString(2).padStart(16, '0');
+  let arreglo_bits = [];
+
+  if (es_negativo) {
+    arreglo_bits.push(1);
+  }
+
+  for (let i = 0; i < bits.length; i++) {
+    arreglo_bits.push(Number(bits[i]));
+  }
+
+  return arreglo_bits;
+}
+
+function bitsToInt16(arreglo_bits) {
+  let es_negativo = false;
+  if (arreglo_bits[0] === 1) {
+    es_negativo = true;
+    arreglo_bits = arreglo_bits.slice(1);
+  }
+
+  let bits = arreglo_bits.join('');
+  let numero = parseInt(bits, 2);
+
+  if (es_negativo) {
+    numero = -numero;
+  }
+
+  return numero;
 }
 
 function bitArrayToInteger(bitArray) {
@@ -253,16 +301,22 @@ function getSamples(audioBytes) {
 
 function makeWatermarkedAudio(imageByteArray, audioByteArray) {
   return new Promise((resolve, reject) => {
-    var indexOfMusicArray = 0;
+    var indexOfMusicArray = 200000;
 
     let arrayToWorkOn = audioByteArray;
 
+    console.log("El audio a trabajar: GAAAAAAAAAAAAAAAAAAA" ,arrayToWorkOn)
+
+    console.log("La imagen a trabajar: GAAAAAAAAAAAAAAAAAA" ,imageByteArray)
+
     for (
       let imageByteIndex = 0;
-      imageByteIndex < imageByteArray.length;
+      imageByteIndex < 1;//imageByteArray.length;
       imageByteIndex++
     ) {
       const imageByteBits = integerToBitArray(imageByteArray[imageByteIndex]);
+
+      console.log(imageByteBits)
 
       for (
         let imageByteBitIndex = 0;
@@ -271,18 +325,19 @@ function makeWatermarkedAudio(imageByteArray, audioByteArray) {
       ) {
         const actualImagebit = imageByteBits[imageByteBitIndex];
 
-        const bitsOfByteFromAudio = integerToBitArray(
+        const bitsOfByteFromAudio = int16ToBits(
           audioByteArray[indexOfMusicArray]
         );
 
         const bitToReplaceIndex = calcBitIndexToReplace(bitsOfByteFromAudio);
 
-        const nextSampleToReplaceIndex = calcNextSampleToReplace(bitsOfByteFromAudio)
+        const nextSampleToReplaceIndex =
+          calcNextSampleToReplace(bitsOfByteFromAudio);
 
         bitsOfByteFromAudio[bitToReplaceIndex] = actualImagebit;
 
         const newByteToIntroduceToAudioArray =
-          bitArrayToInteger(bitsOfByteFromAudio);
+          bitsToInt16(bitsOfByteFromAudio);
 
         arrayToWorkOn[indexOfMusicArray] = newByteToIntroduceToAudioArray;
 
@@ -294,73 +349,70 @@ function makeWatermarkedAudio(imageByteArray, audioByteArray) {
   });
 }
 
-export async function getImageDataUrlFromWatermarkedAudio(watermarkedAudio){
-  const dataArrayOfImagePixels = await getImageByteArrayFromWatermarkedAudio(watermarkedAudio)
+export async function getImageDataUrlFromWatermarkedAudio(watermarkedAudio) {
+  const dataArrayOfImagePixels = await getImageByteArrayFromWatermarkedAudio(
+    watermarkedAudio
+  );
 
-  return transformPixelDataToImageUrl(dataArrayOfImagePixels)
+  return transformPixelDataToImageUrl(dataArrayOfImagePixels);
 }
 
-export function getImageByteArrayFromWatermarkedAudio(watermarkedAudioBlob){
-    return new Promise(async (resolve, reject) => {
+export function getImageByteArrayFromWatermarkedAudio(watermarkedAudioBlob) {
+  return new Promise(async (resolve, reject) => {
+    var indexOfAudioBytesArray = 0;
+    var audioByteArray = await arrayBufferToBytesArray(watermarkedAudioBlob);
+    var imageArrayBytes = [];
 
-        var indexOfAudioBytesArray = 0
-        var audioByteArray = await arrayBufferToBytesArray(watermarkedAudioBlob)
-        var imageArrayBytes = []
+    for (let index = 0; index < 4096; index++) {
+      var bitsOfByteOfImage = [];
 
-        for (let index = 0; index < 4096; index++) {
-            
-            var bitsOfByteOfImage = []
+      for (let indexBit = 0; indexBit < 8; indexBit++) {
+        const bitsOfAudioByteToExtractFrom = integerToBitArray(
+          audioByteArray[indexOfAudioBytesArray]
+        );
 
-            for (let indexBit = 0; indexBit < 8; indexBit++){
+        const bitIndexToExtract = calcBitIndexToReplace(
+          bitsOfAudioByteToExtractFrom
+        );
 
-                const bitsOfAudioByteToExtractFrom = integerToBitArray(audioByteArray[indexOfAudioBytesArray])
+        const nextSampleToReplaceIndex = calcNextSampleToReplace(
+          bitsOfAudioByteToExtractFrom
+        );
 
-                const bitIndexToExtract = calcBitIndexToReplace(bitsOfAudioByteToExtractFrom)
+        bitsOfByteOfImage.push(bitsOfAudioByteToExtractFrom[bitIndexToExtract]);
 
-                const nextSampleToReplaceIndex = calcNextSampleToReplace(bitsOfAudioByteToExtractFrom)
+        indexOfAudioBytesArray += nextSampleToReplaceIndex;
+      }
 
-                bitsOfByteOfImage.push(bitsOfAudioByteToExtractFrom[bitIndexToExtract])
+      const byteFromArrayOfBits = bitArrayToInteger(bitsOfByteOfImage);
 
-                indexOfAudioBytesArray += nextSampleToReplaceIndex
-
-            }
-
-            const byteFromArrayOfBits = bitArrayToInteger(bitsOfByteOfImage)
-
-            imageArrayBytes.push(byteFromArrayOfBits)
-
-        }
-
-        const finalImageByteArray = new Uint8ClampedArray(imageArrayBytes)
-
-        resolve(finalImageByteArray)
-    })
-}
-
-export const transformPixelDataToImageUrl = (pixelData) =>{
-    const canvas = document.createElement('canvas')
-    var ctx = canvas.getContext('2d')
-    canvas.width = 32
-    canvas.height = 32
-    var imageData = ctx.createImageData(32,32)
-    var data = imageData.data
-
-    for (var i = 0; i<pixelData.length; i++){
-      data[i] = pixelData[i]
+      imageArrayBytes.push(byteFromArrayOfBits);
     }
 
-    ctx.putImageData(imageData,0,0)
-    return canvas.toDataURL()
+    const finalImageByteArray = new Uint8ClampedArray(imageArrayBytes);
+
+    resolve(finalImageByteArray);
+  });
+}
+
+export const transformPixelDataToImageUrl = (pixelData) => {
+  const canvas = document.createElement("canvas");
+  var ctx = canvas.getContext("2d");
+  canvas.width = 32;
+  canvas.height = 32;
+  var imageData = ctx.createImageData(32, 32);
+  var data = imageData.data;
+
+  for (var i = 0; i < pixelData.length; i++) {
+    data[i] = pixelData[i];
   }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL();
+};
 
 export async function getWatermarkedAudio(audioFile, watermarkImageByteArray) {
   //Debe devolver un audio en formato Blob
-
-  console.log(audioFile);
-
-  console.log(watermarkImageByteArray);
-
-  const audioArrayBuffer = await getArrayBufferFromReader(audioFile)
 
   const audioFileInBytes = await arrayBufferToBytesArray(audioFile);
 
@@ -369,24 +421,18 @@ export async function getWatermarkedAudio(audioFile, watermarkImageByteArray) {
     return;
   }
 
-  console.log("Audio sin procesar: ", audioFileInBytes);
-
-  var temp = getSamples(audioFileInBytes)
-
-  console.log("Muestras de audio en enteros: ",temp)
-
-  
-
-  console.log("Muestras alteradas: ",temp)
+  var temp = getSamples(audioFileInBytes);
 
   const audioWithWatermarkInBytes = await makeWatermarkedAudio(
     watermarkImageByteArray,
-    audioFileInBytes
+    temp
   );
+
+  console.log("Audio final: ",audioWithWatermarkInBytes)
 
   //console.log("Audio con marca de agua: ", audioWithWatermarkInBytes);
 
-  const watermarkedAudioBlob = getBlobFromInt16Array(temp)//new Blob([audioWithWatermarkInBytes],{type:"audio/mp3"})
+  const watermarkedAudioBlob = getBlobFromInt16Array(audioWithWatermarkInBytes); //new Blob([audioWithWatermarkInBytes],{type:"audio/mp3"})
 
   return watermarkedAudioBlob;
 }
@@ -398,17 +444,16 @@ function getBlobFromInt16Array(int16Array) {
   // Iterate through the integer array, two bytes at a time.
   for (let i = 0; i < int16Array.length; i++) {
     // Convert the two bytes into a byte.
-    const byte = int16Array[i] & 0xFF;
+    const byte = int16Array[i] & 0xff;
 
     // Store the byte in the bytes array.
     bytes[i * 2] = byte;
-    bytes[i * 2 + 1] = (int16Array[i] >> 8) & 0xFF;
+    bytes[i * 2 + 1] = (int16Array[i] >> 8) & 0xff;
   }
 
   // Create a new blob from the bytes array.
-  return new Blob([bytes],{type:"audio/mp3"});
+  return new Blob([bytes], { type: "audio/mp3" });
 }
-
 
 export function getDataUrlFromReader(blobOrFile) {
   return new Promise((resolve, _) => {
