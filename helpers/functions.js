@@ -149,9 +149,11 @@ export const createIPFSClient = async () => {
 };
 
 export async function decryptAes(encryptedStr, key) {
+
+
   const decrypted = crypto.AES.decrypt(encryptedStr, key);
 
-  console.log(decrypted);
+  console.log("A", decrypted);
 
   var str = decrypted.toString(crypto.enc.Utf8);
   return str;
@@ -162,7 +164,15 @@ export async function applyAesEncryption(audioBlob, key) {
 
   const audioDataUrl = await getDataUrlFromReader(audioBlob);
 
+  console.log("Audio data: ",audioDataUrl)
+
   const encryptedStr = await encryptDataUrl(audioDataUrl, key);
+
+  console.log(encryptedStr)
+
+  const decryptStr = crypto.AES.decrypt(encryptedStr,key).toString(crypto.enc.Utf8)
+
+  console.log(decryptStr)
 
   return encryptedStr;
 }
@@ -181,10 +191,10 @@ function calcBitIndexToReplace(bitArray) {
   }
 
   if (bitArray[2] == 1) {
-    return defaultLength - 2;
+    return defaultLength - 1;
   }
 
-  return defaultLength - 3;
+  return defaultLength - 1;
 }
 
 function calcNextSampleToReplace(bitArray) {
@@ -301,22 +311,22 @@ function getSamples(audioBytes) {
 
 function makeWatermarkedAudio(imageByteArray, audioByteArray) {
   return new Promise((resolve, reject) => {
-    var indexOfMusicArray = 200000;
+    var indexOfMusicArray = 0;
 
-    let arrayToWorkOn = audioByteArray;
+    let arrayToWorkOn = audioByteArray;+
 
-    console.log("El audio a trabajar: GAAAAAAAAAAAAAAAAAAA" ,arrayToWorkOn)
-
-    console.log("La imagen a trabajar: GAAAAAAAAAAAAAAAAAA" ,imageByteArray)
+    console.log(arrayToWorkOn.length)
 
     for (
       let imageByteIndex = 0;
-      imageByteIndex < 1;//imageByteArray.length;
+      imageByteIndex < imageByteArray.length;
       imageByteIndex++
     ) {
       const imageByteBits = integerToBitArray(imageByteArray[imageByteIndex]);
 
       console.log(imageByteBits)
+
+      console.log("paso por aqui", imageByteIndex)
 
       for (
         let imageByteBitIndex = 0;
@@ -329,10 +339,9 @@ function makeWatermarkedAudio(imageByteArray, audioByteArray) {
           audioByteArray[indexOfMusicArray]
         );
 
-        const bitToReplaceIndex = calcBitIndexToReplace(bitsOfByteFromAudio);
+        const bitToReplaceIndex = 15;
 
-        const nextSampleToReplaceIndex =
-          calcNextSampleToReplace(bitsOfByteFromAudio);
+        const nextSampleToReplaceIndex = 1
 
         bitsOfByteFromAudio[bitToReplaceIndex] = actualImagebit;
 
@@ -342,6 +351,8 @@ function makeWatermarkedAudio(imageByteArray, audioByteArray) {
         arrayToWorkOn[indexOfMusicArray] = newByteToIntroduceToAudioArray;
 
         indexOfMusicArray += nextSampleToReplaceIndex;
+
+        console.log(indexOfMusicArray)
       }
     }
 
@@ -350,9 +361,12 @@ function makeWatermarkedAudio(imageByteArray, audioByteArray) {
 }
 
 export async function getImageDataUrlFromWatermarkedAudio(watermarkedAudio) {
-  const dataArrayOfImagePixels = await getImageByteArrayFromWatermarkedAudio(
-    watermarkedAudio
-  );
+
+  //const dataArrayOfImagePixels = await getImageByteArrayFromWatermarkedAudio(
+    //watermarkedAudio
+  //);
+
+  return await extraerImagenDeAudio(watermarkedAudio)
 
   return transformPixelDataToImageUrl(dataArrayOfImagePixels);
 }
@@ -360,24 +374,20 @@ export async function getImageDataUrlFromWatermarkedAudio(watermarkedAudio) {
 export function getImageByteArrayFromWatermarkedAudio(watermarkedAudioBlob) {
   return new Promise(async (resolve, reject) => {
     var indexOfAudioBytesArray = 0;
-    var audioByteArray = await arrayBufferToBytesArray(watermarkedAudioBlob);
+    var audioByteArray = getSamples(await arrayBufferToBytesArray(watermarkedAudioBlob));
     var imageArrayBytes = [];
 
     for (let index = 0; index < 4096; index++) {
       var bitsOfByteOfImage = [];
 
       for (let indexBit = 0; indexBit < 8; indexBit++) {
-        const bitsOfAudioByteToExtractFrom = integerToBitArray(
+        const bitsOfAudioByteToExtractFrom = int16ToBits(
           audioByteArray[indexOfAudioBytesArray]
         );
 
-        const bitIndexToExtract = calcBitIndexToReplace(
-          bitsOfAudioByteToExtractFrom
-        );
+        const bitIndexToExtract = 15
 
-        const nextSampleToReplaceIndex = calcNextSampleToReplace(
-          bitsOfAudioByteToExtractFrom
-        );
+        const nextSampleToReplaceIndex = 1
 
         bitsOfByteOfImage.push(bitsOfAudioByteToExtractFrom[bitIndexToExtract]);
 
@@ -514,3 +524,113 @@ const encryptDataUrl = async (dataUrl, key) => {
 
   return ct;
 };
+
+
+export function ocultarImagenEnAudio(audioFile,imagenFile) {
+
+  console.log(imagenFile,audioFile)
+return new Promise((resolve, reject) => {
+  const imagenReader = new FileReader();
+  imagenReader.onload = function(e) {
+    const imagenArrayBuffer = e.target.result;
+    
+    const audioReader = new FileReader();
+    audioReader.onload = function(e) {
+      const audioArrayBuffer = e.target.result;
+      
+      const imagenDataView = new DataView(imagenArrayBuffer);
+      const audioDataView = new DataView(audioArrayBuffer);
+      
+      const imagenSize = imagenDataView.byteLength;
+      
+      const audioSize = audioDataView.byteLength;
+
+      console.log(imagenSize)
+
+      console.log("audio size: ",audioSize)
+      
+      // Asegurarse de que la imagen se ajuste dentro del audio
+      if (imagenSize * 8 * 9 > audioSize) {
+        console.log('La imagen es demasiado grande para ocultarla en el audio.');
+        return;
+      }
+      
+      // Ocultar los bits de la imagen en los bits menos significativos del audio
+      let audioIndex = 0;
+      
+      for (let imagenIndex = 0; imagenIndex < imagenSize; imagenIndex++) {
+        
+        let imagenByte = imagenDataView.getUint8(imagenIndex)
+
+        const imagenByteInBits = integerToBitArray(imagenByte)
+
+        for (let bit = 0; bit < 8; bit++) {
+
+          let audioByte = audioDataView.getUint8(audioIndex);
+
+          let audioByteInBits = integerToBitArray(audioByte)
+      
+          audioByteInBits[7] = imagenByteInBits[bit]
+
+          audioByte = bitArrayToInteger(audioByteInBits)
+          // Guardar el byte de audio modificado
+          audioDataView.setUint8(audioIndex, audioByte);
+          
+          audioIndex += 2
+          
+        }
+
+        
+      }
+      
+      // Guardar el archivo de audio modificado
+      const audioBlob = new Blob([audioDataView], { type: "audio/mp3"});
+      resolve(audioBlob)
+    };
+    audioReader.readAsArrayBuffer(audioFile);
+  };
+  imagenReader.readAsArrayBuffer(imagenFile);
+})
+
+}
+
+export function extraerImagenDeAudio(audioFile) {
+return new Promise((resolve, reject) => {
+  const audioReader = new FileReader();
+  audioReader.onload = function(e) {
+    const audioArrayBuffer = e.target.result;
+    const audioDataView = new DataView(audioArrayBuffer);
+    
+    let imagenBytes = [];
+
+    let audioIndex = 0
+
+    for (let byteImage = 0; byteImage < 1631; byteImage++){
+
+      var imageByteArray = []
+
+      for (let bit = 0; bit < 8; bit++) {
+
+        var audioByte = audioDataView.getUint8(audioIndex);
+
+        var audioByteArray = integerToBitArray(audioByte)
+
+        imageByteArray.push(audioByteArray[7])
+
+        audioIndex += 2
+
+      }
+
+      imagenBytes.push(bitArrayToInteger(imageByteArray))
+    }
+    
+    // Convertir los bytes de imagen en un búfer y crear una URL para descargarlo
+    const imagenArrayBuffer = new Uint8Array(imagenBytes).buffer;
+    const imagenBlob = new Blob([imagenArrayBuffer], { type: 'image/png' });
+    const utl = URL.createObjectURL(imagenBlob)
+    resolve(utl)
+  };
+  audioReader.readAsArrayBuffer(audioFile);
+})
+
+}

@@ -91,11 +91,15 @@ export default function downloadPage() {
 
     console.log("Desencriptando archivo");
 
+    console.log("TextoDADASDADAS: ", encryptedStr)
+
     let decryptStr = await helper.decryptAes(encryptedStr, key);
 
     console.log("Reconstruyendo archivo");
 
     let fileBlob = await helper.getBlobFromDataString(decryptStr);
+
+    console.log(fileBlob)
 
     console.log("guardando");
 

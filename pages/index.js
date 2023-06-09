@@ -16,9 +16,11 @@ export default function Home() {
   const [keyring, setKeyring] = useState()
   const publicKey = 0
   const [secretKey, setSecretKey ] = useState(0)
+  var buy = ""
+  var report = ""
 
   useEffect(() => {
-    //setup()
+    setup()
   }, [])
 
   const setup = async () => {
@@ -49,12 +51,10 @@ export default function Home() {
        return
      }
 
-     publishProcess("key")
-
-    //conect.getKey(publicKey,secretKey,(key) => {
-      //console.log("Empieza proceso de subida")
-      //publishProcess(key)
-    //})
+    conect.getKey(publicKey,secretKey,(key) => {
+      console.log("Empieza proceso de subida")
+      publishProcess(key)
+    })
     
   }
 
@@ -90,22 +90,20 @@ export default function Home() {
 
   const publishProcess = async (key) => {
 
+    console.time("Tiempo subida:")
+
     console.log("Aplicando marca de agua")
 
-    const watermarkedAudio = await helper.getWatermarkedAudio(file, watermarkImageBytesArray)
+    const watermarkedAudio = await helper.ocultarImagenEnAudio(file, watermarkImageFile)
 
-    console.log(watermarkedAudio)
+    console.log("Audio con marca",watermarkedAudio)
 
-    saveAs(watermarkedAudio,"PruebaAudio")
-
-    return
-    
     console.log("Aplicando encriptacion")
 
     const encryptedStr = await helper.applyAesEncryption(watermarkedAudio, key)
 
     console.log(encryptedStr)
-
+    
     console.log("Subiendo a IPFS la cancion")
 
     const fileHashAddress = await helper.uploadToIPFS(encryptedStr)
@@ -123,9 +121,14 @@ export default function Home() {
 
     const {buyAddress,reportAddress} = await deploySmartContract(fileHashAddress,imageHashAddress)
 
+    buy = buyAddress
+
+    report = reportAddress
     console.log("Pasando a descarga")
 
-    window.location = `/posts/downloadPage?hashPrueba=${buyAddress}&reportePrueba=${reportAddress}`
+    console.timeEnd("Tiempo subida:")
+
+    
 
   }
 
@@ -360,6 +363,12 @@ export default function Home() {
           {watermarkImageBytesArray != null && <h2 className='p-3'>Imagen de marca de agua</h2>}
           <div className='p-5'>
             <img id='imagePreview' />
+          </div>
+
+          <div className='p-3'>
+            <button type="button" class="btn btn-primary" id='buttonDownload' onClick={() =>{
+              window.location = `/posts/downloadPage?hashPrueba=${buy}&reportePrueba=${report}`
+            }}>Moverse</button>
           </div>
 
         </div>
