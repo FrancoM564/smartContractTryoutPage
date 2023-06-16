@@ -111,10 +111,13 @@ export default function reportPage() {
                 returnEarlyThreshold: 5
             };
     
-            compare(imageToCompare,imageToCompare,options, (err,data)=>{
+            compare(imageToCompare,imageExtracted,options, (err,data)=>{
                 if (err){
                     console.log(err)
                 }else{
+
+                    console.log(data.misMatchPercentage)
+
                     if (data.misMatchPercentage > 5){
                         setComparisonResult("No son iguales")
                         resolve(false)

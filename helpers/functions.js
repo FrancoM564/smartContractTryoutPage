@@ -150,10 +150,7 @@ export const createIPFSClient = async () => {
 
 export async function decryptAes(encryptedStr, key) {
 
-
   const decrypted = crypto.AES.decrypt(encryptedStr, key);
-
-  console.log("A", decrypted);
 
   var str = decrypted.toString(crypto.enc.Utf8);
   return str;
@@ -164,15 +161,15 @@ export async function applyAesEncryption(audioBlob, key) {
 
   const audioDataUrl = await getDataUrlFromReader(audioBlob);
 
-  console.log("Audio data: ",audioDataUrl)
+  //console.log("Audio data: ",audioDataUrl)
 
   const encryptedStr = await encryptDataUrl(audioDataUrl, key);
 
-  console.log(encryptedStr)
+  //console.log(encryptedStr)
 
   const decryptStr = crypto.AES.decrypt(encryptedStr,key).toString(crypto.enc.Utf8)
 
-  console.log(decryptStr)
+  //console.log(decryptStr)
 
   return encryptedStr;
 }
@@ -267,23 +264,6 @@ function int16ToBits(numero) {
   return arreglo_bits;
 }
 
-function bitsToInt16(arreglo_bits) {
-  let es_negativo = false;
-  if (arreglo_bits[0] === 1) {
-    es_negativo = true;
-    arreglo_bits = arreglo_bits.slice(1);
-  }
-
-  let bits = arreglo_bits.join('');
-  let numero = parseInt(bits, 2);
-
-  if (es_negativo) {
-    numero = -numero;
-  }
-
-  return numero;
-}
-
 function bitArrayToInteger(bitArray) {
   var integer = 0;
   for (var i = 0; i < bitArray.length; i++) {
@@ -309,66 +289,9 @@ function getSamples(audioBytes) {
   return samples;
 }
 
-function makeWatermarkedAudio(imageByteArray, audioByteArray) {
-  return new Promise((resolve, reject) => {
-    var indexOfMusicArray = 0;
-
-    let arrayToWorkOn = audioByteArray;+
-
-    console.log(arrayToWorkOn.length)
-
-    for (
-      let imageByteIndex = 0;
-      imageByteIndex < imageByteArray.length;
-      imageByteIndex++
-    ) {
-      const imageByteBits = integerToBitArray(imageByteArray[imageByteIndex]);
-
-      console.log(imageByteBits)
-
-      console.log("paso por aqui", imageByteIndex)
-
-      for (
-        let imageByteBitIndex = 0;
-        imageByteBitIndex < imageByteBits.length;
-        imageByteBitIndex++
-      ) {
-        const actualImagebit = imageByteBits[imageByteBitIndex];
-
-        const bitsOfByteFromAudio = int16ToBits(
-          audioByteArray[indexOfMusicArray]
-        );
-
-        const bitToReplaceIndex = 15;
-
-        const nextSampleToReplaceIndex = 1
-
-        bitsOfByteFromAudio[bitToReplaceIndex] = actualImagebit;
-
-        const newByteToIntroduceToAudioArray =
-          bitsToInt16(bitsOfByteFromAudio);
-
-        arrayToWorkOn[indexOfMusicArray] = newByteToIntroduceToAudioArray;
-
-        indexOfMusicArray += nextSampleToReplaceIndex;
-
-        console.log(indexOfMusicArray)
-      }
-    }
-
-    resolve(arrayToWorkOn);
-  });
-}
-
 export async function getImageDataUrlFromWatermarkedAudio(watermarkedAudio) {
 
-  //const dataArrayOfImagePixels = await getImageByteArrayFromWatermarkedAudio(
-    //watermarkedAudio
-  //);
-
   return await extraerImagenDeAudio(watermarkedAudio)
-
-  return transformPixelDataToImageUrl(dataArrayOfImagePixels);
 }
 
 export function getImageByteArrayFromWatermarkedAudio(watermarkedAudioBlob) {
@@ -420,50 +343,6 @@ export const transformPixelDataToImageUrl = (pixelData) => {
   ctx.putImageData(imageData, 0, 0);
   return canvas.toDataURL();
 };
-
-export async function getWatermarkedAudio(audioFile, watermarkImageByteArray) {
-  //Debe devolver un audio en formato Blob
-
-  const audioFileInBytes = await arrayBufferToBytesArray(audioFile);
-
-  if (audioFileInBytes.length < watermarkImageByteArray.length * 9) {
-    console.log("Muy poca duración de archivo");
-    return;
-  }
-
-  var temp = getSamples(audioFileInBytes);
-
-  const audioWithWatermarkInBytes = await makeWatermarkedAudio(
-    watermarkImageByteArray,
-    temp
-  );
-
-  console.log("Audio final: ",audioWithWatermarkInBytes)
-
-  //console.log("Audio con marca de agua: ", audioWithWatermarkInBytes);
-
-  const watermarkedAudioBlob = getBlobFromInt16Array(audioWithWatermarkInBytes); //new Blob([audioWithWatermarkInBytes],{type:"audio/mp3"})
-
-  return watermarkedAudioBlob;
-}
-
-function getBlobFromInt16Array(int16Array) {
-  // Create a new array to store the bytes.
-  const bytes = new Uint8Array(int16Array.length * 2);
-
-  // Iterate through the integer array, two bytes at a time.
-  for (let i = 0; i < int16Array.length; i++) {
-    // Convert the two bytes into a byte.
-    const byte = int16Array[i] & 0xff;
-
-    // Store the byte in the bytes array.
-    bytes[i * 2] = byte;
-    bytes[i * 2 + 1] = (int16Array[i] >> 8) & 0xff;
-  }
-
-  // Create a new blob from the bytes array.
-  return new Blob([bytes], { type: "audio/mp3" });
-}
 
 export function getDataUrlFromReader(blobOrFile) {
   return new Promise((resolve, _) => {
@@ -605,7 +484,7 @@ return new Promise((resolve, reject) => {
 
     let audioIndex = 0
 
-    for (let byteImage = 0; byteImage < 1631; byteImage++){
+    for (let byteImage = 0; byteImage < 1361; byteImage++){
 
       var imageByteArray = []
 

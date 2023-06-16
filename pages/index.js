@@ -16,8 +16,10 @@ export default function Home() {
   const [keyring, setKeyring] = useState()
   const publicKey = 0
   const [secretKey, setSecretKey ] = useState(0)
-  var buy = ""
-  var report = ""
+  const [titletext,setTitle] = useState("Prueba de subida de archivos")
+  const [buy,setBuy] = useState("")
+  const [report,setReport] = useState("")
+  const [songTitle,setSongTitle] = useState("")
 
   useEffect(() => {
     setup()
@@ -52,7 +54,8 @@ export default function Home() {
      }
 
     conect.getKey(publicKey,secretKey,(key) => {
-      console.log("Empieza proceso de subida")
+      setTitle("Empieza proceso de subida")
+      console.time("Tiempo subida:")
       publishProcess(key)
     })
     
@@ -65,6 +68,7 @@ export default function Home() {
         (result) => {
 
           if (result.contract) {
+            console.log(result)
             resolve(result.contract.address)
 
           }
@@ -90,25 +94,23 @@ export default function Home() {
 
   const publishProcess = async (key) => {
 
-    console.time("Tiempo subida:")
-
-    console.log("Aplicando marca de agua")
+    setTitle("Aplicando marca de agua")
 
     const watermarkedAudio = await helper.ocultarImagenEnAudio(file, watermarkImageFile)
 
-    console.log("Audio con marca",watermarkedAudio)
+    setTitle("Audio con marca",watermarkedAudio)
 
-    console.log("Aplicando encriptacion")
+    setTitle("Aplicando encriptacion")
 
     const encryptedStr = await helper.applyAesEncryption(watermarkedAudio, key)
 
-    console.log(encryptedStr)
+    setTitle(encryptedStr)
     
-    console.log("Subiendo a IPFS la cancion")
+    setTitle("Subiendo a IPFS la cancion")
 
     const fileHashAddress = await helper.uploadToIPFS(encryptedStr)
 
-    console.log("Subiendo imagen a IPFS")
+    setTitle("Subiendo imagen a IPFS")
 
     const imageHashAddress = await helper.uploadImageToIPFS(watermarkImageFile)
 
@@ -117,16 +119,20 @@ export default function Home() {
       return
     }
 
-    console.log("Creando Smart Contract de Venta")
+    setTitle("Creando Smart Contract de Venta")
+    console.time("Tiempo respuesta creacion smartContracts:")
 
     const {buyAddress,reportAddress} = await deploySmartContract(fileHashAddress,imageHashAddress)
 
-    buy = buyAddress
+    console.timeEnd("Tiempo respuesta creacion smartContracts:")
 
-    report = reportAddress
-    console.log("Pasando a descarga")
+    setBuy(buyAddress)
+
+    setReport(reportAddress)
+    setTitle("Pasando a descarga")
 
     console.timeEnd("Tiempo subida:")
+
 
     
 
@@ -154,7 +160,7 @@ export default function Home() {
 
       console.log("Usando cuenta de Alice")
   
-      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, "Welcome to the jungle", 1000000000000000n, fileHashAddress, imageHashAddress)
+      var tx = contract.tx.newPublish({ gasLimit, storageDepositLimit}, songTitle, 10n, fileHashAddress, imageHashAddress)
 
       let buyAddress = await instantiateContractCode(tx, alicePair)
 
@@ -217,7 +223,7 @@ export default function Home() {
       });
       const storageDepositLimit = null
 
-      var tx = contract.tx.new({gasLimit,storageDepositLimit},owner.address,buyContractAddress,"La bebe")
+      var tx = contract.tx.new({gasLimit,storageDepositLimit},owner.address,buyContractAddress,songTitle)
 
       console.log(owner)
 
@@ -235,6 +241,7 @@ export default function Home() {
       const audioFile = target.files[0]
       console.log(audioFile.type)
       setFile(audioFile)
+      setSongTitle(audioFile.name)
     }
   }
 
@@ -277,70 +284,12 @@ export default function Home() {
       reader.readAsDataURL(imageFile)
     }
   }
-  /*
-   async function getKey(doWithAgreedKey) {
-     const socket = new WebSocket('ws://localhost:8006');
  
-     socket.onopen = async function () {
-       console.log('Conexión establecida con el servidor');
- 
-       const action = {
-         action: "sendPublicKey"
-       }
- 
-       socket.send(JSON.stringify(action))
-     }
- 
-     socket.onmessage = async (event) => {
-       const data = event.data
- 
-       const message = await processData(data, publicKey, socket)
- 
-       socket.send(message)
-     }
- 
-     socket.onclose = (e) => {
-       doWithAgreedKey()
-       console.log("Cierre hecho")
-     }
-   }
- 
-   async function getSessionKey() {
-     const values = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
- 
-     var key = ""
- 
-     for (let i = 0; i < 618; i++) {
-       key += values.charAt(Math.floor(Math.random() * values.length))
-     }
- 
-     return key
-   }
- 
-   async function processData(data, socket) {
- 
-     data = JSON.parse(data)
- 
-     switch (data.event) {
-       case "publicKeyMessage":
- 
-         const message = {
-           action: "sentClientPk",
-           client_pk: publicKey
-         }
- 
-         return JSON.stringify(message)
- 
-       default:
-         console.log("deberia cerrarse")
-     }
- 
-   }*/
 
   return (
     <div className='container text-center'>
       <h1 className='fw-bold fs-1 '>
-        Prueba de subida de archivos
+        {titletext}
       </h1>
 
       <div className='row container'>
