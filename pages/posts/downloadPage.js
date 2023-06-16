@@ -11,7 +11,7 @@ export default function downloadPage() {
   const [api, setApi] = useState();
   const [keyring, setKeyring] = useState();
   const [demoAccount, setDemoAccount] = useState();
-  let keyT = "llavesupersecret";
+  const [downloadTextState,setDownloadTextState] = useState("Esperando descarga....")
 
   useEffect(() => {
     setup();
@@ -53,7 +53,11 @@ export default function downloadPage() {
   const onButtonBuyPressed = async () => {
     let params = new URLSearchParams(location.search);
 
+    console.time("Compra Archivo: ")
+
     let isBought = await buySong(params.get("hashPrueba"));
+
+    console.timeEnd("Compra Archivo: ")
 
     if (isBought) {
       console.log("Ya has comprado este archivo");
@@ -64,6 +68,9 @@ export default function downloadPage() {
   };
 
   const onButtonDownloadPressed = async () => {
+
+    console.time("Tiempo descarga:")
+
     const key = await getEncriptionKey();
 
     if (key == "No se ha encontrado el archivo") {
@@ -75,48 +82,50 @@ export default function downloadPage() {
 
     let params = new URLSearchParams(location.search);
 
-    console.log("Obteniendo informacion de smart contract");
+    setDownloadTextState("Obteniendo informacion de smart contract");
+
+    console.time("Tiempo respuesta contrato:")
 
     let contractInfo = await querySongAddress(params.get("hashPrueba"));
 
+    console.timeEnd("Tiempo respuesta contrato:")
+
     if (contractInfo.ok == "No has comprado este archivo") {
-      console.log("El usuario no ha comprado este archivo");
+      setDownloadTextState("El usuario no ha comprado este archivo");
       return;
     }
 
-    console.log("Descargando archivo");
+    setDownloadTextState("Descargando archivo");
 
     let encryptedStr = await helper.downloadFromIPFS(contractInfo.ok);
 
-    //Colocar forma de obtener llave del servidor de proteccion
+    //Colocar forma de obtener llave del servidor de proteccion1631
 
-    console.log("Desencriptando archivo");
+    setDownloadTextState("Desencriptando archivo");
 
     let decryptStr = await helper.decryptAes(encryptedStr, key);
 
-    console.log("Reconstruyendo archivo");
+    setDownloadTextState("Reconstruyendo archivo");
 
     let fileBlob = await helper.getBlobFromDataString(decryptStr);
 
-    console.log("guardando");
+    //console.log(fileBlob)
 
-    // let imageDataUrl = await helper.getImageUrlDataFromWatermakedBlob(fileBlob);
+    setDownloadTextState("Guardando");
 
-    // console.log(imageDataUrl);
+    let imageDataUrl = await helper.getImageDataUrlFromWatermarkedAudio(fileBlob)
 
-    // const img = document.getElementById("divImagen");
-
-    // img.append(imageDataUrl);
-
+    //console.log(imageDataUrl);
+    
     let filename = await querySongName(params.get("hashPrueba"))
 
-    console.log(filename)
+    //console.log(filename)
 
     var name = filename.ok
+    
+    saveAs(fileBlob,`${name}`,{type:"audio/mp3"});
 
-
-
-    saveAs(fileBlob,name,{type:"audio/mp3"});
+    console.timeEnd("Tiempo descarga:")
   };
 
   const querySongAddress = async (contractAddress) => {
@@ -270,6 +279,7 @@ export default function downloadPage() {
             </button>
           </div>
         </div>
+        <h2>{downloadTextState}</h2>
       </div>
     </>
   );

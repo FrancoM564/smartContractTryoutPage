@@ -87,12 +87,10 @@ export default function reportPage() {
             const audioFile = target.files[0]
             console.log(audioFile.type)
 
-            const imageBytes = await functionsHelper.getImageBitArray(audioFile)
-
-            const imageUrl = await getImageDataUrl(imageBytes)
+            const imageUrl = await functionsHelper.getImageDataUrlFromWatermarkedAudio(audioFile)
 
             //Cambiar a imagen extraida una vez se logre el marcaje de agua
-            setImageExtracted(imageToCompare)
+            setImageExtracted(imageUrl)
 
             const areSameImages = await compareImages()
 
@@ -113,10 +111,13 @@ export default function reportPage() {
                 returnEarlyThreshold: 5
             };
     
-            compare(imageToCompare,imageToCompare,options, (err,data)=>{
+            compare(imageToCompare,imageExtracted,options, (err,data)=>{
                 if (err){
                     console.log(err)
                 }else{
+
+                    console.log(data.misMatchPercentage)
+
                     if (data.misMatchPercentage > 5){
                         setComparisonResult("No son iguales")
                         resolve(false)
