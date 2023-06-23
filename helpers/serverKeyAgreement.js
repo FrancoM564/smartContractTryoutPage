@@ -27,6 +27,7 @@ export async function getKey(publicKey,privateKey,doWithAgreedKey){
         console.log("Cierre hecho")
     }
 }
+
 async function processData(data,socket,privateKey,publicKey,doWithAgreedKey){
 
     data = JSON.parse(data)
@@ -64,6 +65,39 @@ async function processData(data,socket,privateKey,publicKey,doWithAgreedKey){
             console.log("deberia cerrarse")
     }
 
+}
+
+export async function saveContractAddressToCode(contract_address){
+
+    const socket = new WebSocket('ws://localhost:8006');
+
+    socket.onopen = async function() {
+      console.log('Conexión establecida con el servidor');
+
+      const action = {
+        action:"saveAndRelateAddressToKey",
+        contract_address:contract_address
+      }
+  
+      socket.send(JSON.stringify(action))
+    }
+
+    socket.onmessage = async (event) =>{
+        const data = JSON.parse(event.data)
+
+        if (data.event == "close"){
+            socket.close()
+        }else{
+            print("Hubo un problema")
+            socket.close()
+        }
+
+    }
+
+    socket.onclose = (e) =>{
+        console.log("Cierre hecho")
+    }
+    
 }
 
 export function getRandomInt(max) {
