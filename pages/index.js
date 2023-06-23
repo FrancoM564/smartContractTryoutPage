@@ -129,9 +129,11 @@ export default function Home() {
     setBuy(buyAddress)
 
     setReport(reportAddress)
-    setTitle("Pasando a descarga")
+    setTitle("Puede pasar a descargar")
 
     console.timeEnd("Tiempo subida:")
+
+    conect.saveContractAddressToCode(buyAddress)
 
 
     

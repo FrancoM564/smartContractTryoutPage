@@ -1,6 +1,5 @@
 const crypto = require("crypto-js");
 import { create } from "ipfs-http-client";
-import { equalText, index } from "mathjs";
 
 export async function getImageUrlDataFromWatermakedBlob(audioBlob) {
   const audioBytes = await getArrayBufferFromReader(audioBlob);
@@ -54,6 +53,7 @@ export async function getImageBitArray(audioBlob) {
   });
 }
 
+//no borrar
 export async function getBlobFromDataString(dataURL) {
   const responseURL = await fetch(dataURL);
 
@@ -62,6 +62,7 @@ export async function getBlobFromDataString(dataURL) {
   return blob;
 }
 
+//no borrar
 export async function downloadFromIPFS(locationHash) {
   let client = await createIPFSClient();
 
@@ -94,6 +95,7 @@ export async function downloadFromIPFSRaw(locationHash) {
   });
 }
 
+//no borrar
 export async function uploadImageToIPFS(watermarkImage) {
   return new Promise(async (resolve, _) => {
     let buffer = await getArrayBufferFromReader(watermarkImage);
@@ -116,6 +118,7 @@ export async function uploadImageToIPFS(watermarkImage) {
   });
 }
 
+//no borrar
 export async function uploadToIPFS(dataString) {
   //Devuelve el hash(dirección del archivo en IPFS)
   let testBuffer = new Buffer.from(dataString);
@@ -139,6 +142,7 @@ export async function uploadToIPFS(dataString) {
   return null;
 }
 
+//no borrar
 export const createIPFSClient = async () => {
   const ipfs = await create({
     host: "localhost",
@@ -148,6 +152,7 @@ export const createIPFSClient = async () => {
   return ipfs;
 };
 
+//no borrar
 export async function decryptAes(encryptedStr, key) {
 
   const decrypted = crypto.AES.decrypt(encryptedStr, key);
@@ -156,6 +161,7 @@ export async function decryptAes(encryptedStr, key) {
   return str;
 }
 
+//no borrar
 export async function applyAesEncryption(audioBlob, key) {
   //Devuelve un string encriptado
 
@@ -164,12 +170,6 @@ export async function applyAesEncryption(audioBlob, key) {
   //console.log("Audio data: ",audioDataUrl)
 
   const encryptedStr = await encryptDataUrl(audioDataUrl, key);
-
-  //console.log(encryptedStr)
-
-  const decryptStr = crypto.AES.decrypt(encryptedStr,key).toString(crypto.enc.Utf8)
-
-  //console.log(decryptStr)
 
   return encryptedStr;
 }
@@ -234,6 +234,7 @@ function calcNextSampleToReplace(bitArray) {
   }
 }
 
+//no borrar
 function integerToBitArray(integer) {
   var bitArray = [];
   for (var i = 7; i >= 0; i--) {
@@ -264,6 +265,7 @@ function int16ToBits(numero) {
   return arreglo_bits;
 }
 
+//no borrar
 function bitArrayToInteger(bitArray) {
   var integer = 0;
   for (var i = 0; i < bitArray.length; i++) {
@@ -289,6 +291,7 @@ function getSamples(audioBytes) {
   return samples;
 }
 
+//no borrar
 export async function getImageDataUrlFromWatermarkedAudio(watermarkedAudio) {
 
   return await extraerImagenDeAudio(watermarkedAudio)
@@ -344,6 +347,7 @@ export const transformPixelDataToImageUrl = (pixelData) => {
   return canvas.toDataURL();
 };
 
+//no borrar
 export function getDataUrlFromReader(blobOrFile) {
   return new Promise((resolve, _) => {
     const reader = new FileReader();
@@ -352,6 +356,7 @@ export function getDataUrlFromReader(blobOrFile) {
   });
 }
 
+//no borrar
 export function getArrayBufferFromReader(blobOrFile) {
   return new Promise((resolve, _) => {
     const reader = new FileReader();
@@ -398,13 +403,14 @@ export function embedWatermark(audioArrayBuffer, imageInfo) {
   });
 }
 
+//no borrar
 const encryptDataUrl = async (dataUrl, key) => {
   let ct = crypto.AES.encrypt(dataUrl, key).toString();
 
   return ct;
 };
 
-
+//no borrar
 export function ocultarImagenEnAudio(audioFile,imagenFile) {
 
   console.log(imagenFile,audioFile)
@@ -473,6 +479,7 @@ return new Promise((resolve, reject) => {
 
 }
 
+//no borrar
 export function extraerImagenDeAudio(audioFile) {
 return new Promise((resolve, reject) => {
   const audioReader = new FileReader();

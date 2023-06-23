@@ -25,13 +25,6 @@ export default function downloadPage() {
 
     setApi(api);
     setKeyring(keyring);
-
-    /*api.query.system.events((events) => {
-      console.log(`\nReceived ${events.length} events:`);
-  
-      console.log(events)
-    })*/
-
     const Bob = keyring.addFromUri("//Bob", { name: "Bob default" });
 
     setDemoAccount(Bob);
