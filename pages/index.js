@@ -124,6 +124,8 @@ export default function Home() {
 
     const {buyAddress,reportAddress} = await deploySmartContract(fileHashAddress,imageHashAddress)
 
+    console.log(buyAddress,reportAddress)
+
     console.timeEnd("Tiempo respuesta creacion smartContracts:")
 
     setBuy(buyAddress)
@@ -133,7 +135,7 @@ export default function Home() {
 
     console.timeEnd("Tiempo subida:")
 
-    conect.saveContractAddressToCode(buyAddress)
+    await conect.saveContractAddressToCode(buyAddress,reportAddress,key)
 
 
     
@@ -227,11 +229,11 @@ export default function Home() {
 
       var tx = contract.tx.new({gasLimit,storageDepositLimit},owner.address,buyContractAddress,songTitle)
 
-      console.log(owner)
+      //console.log(owner)
 
       let contracAddress = await instantiateContractCode(tx,owner)
 
-      console.log(contracAddress)
+      //console.log(contracAddress)
 
       resolve(contracAddress)
     })

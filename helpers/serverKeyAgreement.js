@@ -67,7 +67,7 @@ async function processData(data,socket,privateKey,publicKey,doWithAgreedKey){
 
 }
 
-export async function saveContractAddressToCode(contract_address){
+export async function saveContractAddressToCode(contract_address,report_address,key){
 
     const socket = new WebSocket('ws://localhost:8006');
 
@@ -76,7 +76,9 @@ export async function saveContractAddressToCode(contract_address){
 
       const action = {
         action:"saveAndRelateAddressToKey",
-        contract_address:contract_address
+        report_address:report_address,
+        contract_address:contract_address,
+        key:key
       }
   
       socket.send(JSON.stringify(action))
