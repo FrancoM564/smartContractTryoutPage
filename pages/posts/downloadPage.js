@@ -2,6 +2,7 @@ import { ContractPromise } from "@polkadot/api-contract";
 import BN from "bn.js";
 import "bootstrap/dist/css/bootstrap.css";
 const helper = require("../../helpers/functions");
+const keyHelper = require("../../helpers/serverKeyAgreement");
 import { useState, useEffect } from "react";
 const { ApiPromise, WsProvider, Keyring } = require("@polkadot/api");
 import { saveAs } from "file-saver";
@@ -11,7 +12,12 @@ export default function downloadPage() {
   const [api, setApi] = useState();
   const [keyring, setKeyring] = useState();
   const [demoAccount, setDemoAccount] = useState();
-  const [downloadTextState,setDownloadTextState] = useState("Esperando descarga....")
+  const [downloadTextState, setDownloadTextState] = useState(
+    "Esperando descarga...."
+  );
+  var tiempoCompra = 0;
+  var indexContract = 0;
+  let downloadAdress = "";
 
   useEffect(() => {
     setup();
@@ -44,13 +50,17 @@ export default function downloadPage() {
   };
 
   const onButtonBuyPressed = async () => {
-    let params = new URLSearchParams(location.search);
+    downloadAdress = await keyHelper.getContractAddress(indexContract);
 
-    console.time("Compra Archivo: ")
+    //let params = new URLSearchParams(location.search);
 
-    let isBought = await buySong(params.get("hashPrueba"));
+    var timeStartBuy = performance.now();
 
-    console.timeEnd("Compra Archivo: ")
+    let isBought = await buySong(downloadAdress);
+
+    tiempoCompra = performance.now() - timeStartBuy;
+
+    console.log(tiempoCompra);
 
     if (isBought) {
       console.log("Ya has comprado este archivo");
@@ -61,27 +71,15 @@ export default function downloadPage() {
   };
 
   const onButtonDownloadPressed = async () => {
-
-    console.time("Tiempo descarga:")
-
-    const key = await getEncriptionKey();
-
-    if (key == "No se ha encontrado el archivo") {
-      console.log(key);
-      return;
-    }
-
-    console.log(key);
-
     let params = new URLSearchParams(location.search);
 
     setDownloadTextState("Obteniendo informacion de smart contract");
 
-    console.time("Tiempo respuesta contrato:")
+    var timeStartGetInfo = performance.now();
 
-    let contractInfo = await querySongAddress(params.get("hashPrueba"));
+    let contractInfo = await querySongAddress(downloadAdress);
 
-    console.timeEnd("Tiempo respuesta contrato:")
+    var timeCompleteGetInfo = performance.now() - timeStartGetInfo;
 
     if (contractInfo.ok == "No has comprado este archivo") {
       setDownloadTextState("El usuario no ha comprado este archivo");
@@ -94,9 +92,20 @@ export default function downloadPage() {
 
     //Colocar forma de obtener llave del servidor de proteccion1631
 
-    setDownloadTextState("Desencriptando archivo");
+    const key = await getEncriptionKey(downloadAdress);
+
+    console.log(key);
+
+    var timeStartDecryption = performance.now();
+    var memoryDecryption = performance.memory.usedJSHeapSize;
 
     let decryptStr = await helper.decryptAes(encryptedStr, key);
+
+    var timeCompleteDecryption = performance.now() - timeStartDecryption;
+    var memoryDecryptionFinal = (
+      (performance.memory.usedJSHeapSize - memoryDecryption) /
+      1048576
+    ).toFixed(2);
 
     setDownloadTextState("Reconstruyendo archivo");
 
@@ -106,23 +115,43 @@ export default function downloadPage() {
 
     setDownloadTextState("Guardando");
 
-    let imageDataUrl = await helper.getImageDataUrlFromWatermarkedAudio(fileBlob)
-
     //console.log(imageDataUrl);
-    
-    let filename = await querySongName(params.get("hashPrueba"))
+
+    let filename = await querySongName(downloadAdress);
 
     //console.log(filename)
 
-    var name = filename.ok
-    
-    saveAs(fileBlob,`${name}`,{type:"audio/mp3"});
+    var name = filename.ok;
 
-    console.timeEnd("Tiempo descarga:")
+    saveAs(fileBlob, `${name}`, { type: "audio/mp3" });
+
+    console.log(
+      "Tiempo compra: ",
+      tiempoCompra,
+      "ms\nTiempo obtener info: ",
+      timeCompleteGetInfo,
+      "ms\nTiempo desencriptacion: ",
+      timeCompleteGetInfo,
+      "ms\nConsumo de memoria desencriptacion: ",
+      memoryDecryptionFinal,
+      "MB"
+    );
+
+    helper.saveOnCSVDowloadValues(
+      name,
+      tiempoCompra,
+      timeCompleteGetInfo,
+      timeCompleteDecryption,
+      memoryDecryptionFinal
+    );
+
+    console.timeEnd("Tiempo descarga:");
   };
 
   const querySongAddress = async (contractAddress) => {
     return new Promise(async (resolve, _) => {
+      console.log(contractAddress);
+
       const contract = await getContract(contractAddress);
 
       const gasLimit = api.registry.createType("WeightV2", {
@@ -197,7 +226,7 @@ export default function downloadPage() {
 
       var price = await querySongPrice(contractAddress);
 
-      console.log(price)
+      console.log(price);
 
       price = price.ok + price.ok / 10 + price.ok / 10;
 

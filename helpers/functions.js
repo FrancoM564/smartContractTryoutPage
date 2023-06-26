@@ -100,8 +100,6 @@ export async function uploadImageToIPFS(watermarkImage) {
   return new Promise(async (resolve, _) => {
     let buffer = await getArrayBufferFromReader(watermarkImage);
 
-    console.log(buffer);
-
     let send = new Buffer.from(buffer);
     const image = new Blob([send], { type: watermarkImage.type });
     let client = await createIPFSClient();
@@ -154,7 +152,6 @@ export const createIPFSClient = async () => {
 
 //no borrar
 export async function decryptAes(encryptedStr, key) {
-
   const decrypted = crypto.AES.decrypt(encryptedStr, key);
 
   var str = decrypted.toString(crypto.enc.Utf8);
@@ -180,60 +177,6 @@ async function arrayBufferToBytesArray(audioFile) {
   return new Uint8Array(audioArrayBuffer);
 }
 
-function calcBitIndexToReplace(bitArray) {
-  const defaultLength = bitArray.length
-
-  if (bitArray[1] == 1) {
-    return defaultLength - 1;
-  }
-
-  if (bitArray[2] == 1) {
-    return defaultLength - 1;
-  }
-
-  return defaultLength - 1;
-}
-
-function calcNextSampleToReplace(bitArray) {
-
-  var initialIndex = 0
-
-  if (bitArray.length == 17){
-    initialIndex = 1
-  }
-
-
-  if (bitArray[initialIndex] == 1) {
-    if (bitArray[initialIndex + 1] == 1) {
-      if (bitArray[initialIndex + 2] == 1) {
-        return 8;
-      } else {
-        return 7;
-      }
-    } else {
-      if (bitArray[initialIndex + 2] == 1) {
-        return 6;
-      } else {
-        return 5;
-      }
-    }
-  } else {
-    if (bitArray[initialIndex + 1] == 1) {
-      if (bitArray[initialIndex + 2] == 1) {
-        return 4;
-      } else {
-        return 3;
-      }
-    } else {
-      if (bitArray[initialIndex + 2] == 1) {
-        return 2;
-      } else {
-        return 1;
-      }
-    }
-  }
-}
-
 //no borrar
 function integerToBitArray(integer) {
   var bitArray = [];
@@ -251,7 +194,7 @@ function int16ToBits(numero) {
     numero = Math.abs(numero);
   }
 
-  let bits = numero.toString(2).padStart(16, '0');
+  let bits = numero.toString(2).padStart(16, "0");
   let arreglo_bits = [];
 
   if (es_negativo) {
@@ -293,14 +236,15 @@ function getSamples(audioBytes) {
 
 //no borrar
 export async function getImageDataUrlFromWatermarkedAudio(watermarkedAudio) {
-
-  return await extraerImagenDeAudio(watermarkedAudio)
+  return await extraerImagenDeAudio(watermarkedAudio);
 }
 
 export function getImageByteArrayFromWatermarkedAudio(watermarkedAudioBlob) {
   return new Promise(async (resolve, reject) => {
     var indexOfAudioBytesArray = 0;
-    var audioByteArray = getSamples(await arrayBufferToBytesArray(watermarkedAudioBlob));
+    var audioByteArray = getSamples(
+      await arrayBufferToBytesArray(watermarkedAudioBlob)
+    );
     var imageArrayBytes = [];
 
     for (let index = 0; index < 4096; index++) {
@@ -311,9 +255,9 @@ export function getImageByteArrayFromWatermarkedAudio(watermarkedAudioBlob) {
           audioByteArray[indexOfAudioBytesArray]
         );
 
-        const bitIndexToExtract = 15
+        const bitIndexToExtract = 15;
 
-        const nextSampleToReplaceIndex = 1
+        const nextSampleToReplaceIndex = 1;
 
         bitsOfByteOfImage.push(bitsOfAudioByteToExtractFrom[bitIndexToExtract]);
 
@@ -411,112 +355,178 @@ const encryptDataUrl = async (dataUrl, key) => {
 };
 
 //no borrar
-export function ocultarImagenEnAudio(audioFile,imagenFile) {
+export function ocultarImagenEnAudio(audioFile, imagenFile) {
+  return new Promise((resolve, reject) => {
+    const imagenReader = new FileReader();
+    imagenReader.onload = function (e) {
+      const imagenArrayBuffer = e.target.result;
 
-  console.log(imagenFile,audioFile)
-return new Promise((resolve, reject) => {
-  const imagenReader = new FileReader();
-  imagenReader.onload = function(e) {
-    const imagenArrayBuffer = e.target.result;
-    
-    const audioReader = new FileReader();
-    audioReader.onload = function(e) {
-      const audioArrayBuffer = e.target.result;
-      
-      const imagenDataView = new DataView(imagenArrayBuffer);
-      const audioDataView = new DataView(audioArrayBuffer);
-      
-      const imagenSize = imagenDataView.byteLength;
-      
-      const audioSize = audioDataView.byteLength;
+      const audioReader = new FileReader();
+      audioReader.onload = function (e) {
+        const audioArrayBuffer = e.target.result;
 
-      console.log(imagenSize)
+        const imagenDataView = new DataView(imagenArrayBuffer);
+        const audioDataView = new DataView(audioArrayBuffer);
 
-      console.log("audio size: ",audioSize)
-      
-      // Asegurarse de que la imagen se ajuste dentro del audio
-      if (imagenSize * 8 * 9 > audioSize) {
-        console.log('La imagen es demasiado grande para ocultarla en el audio.');
-        return;
-      }
-      
-      // Ocultar los bits de la imagen en los bits menos significativos del audio
-      let audioIndex = 0;
-      
-      for (let imagenIndex = 0; imagenIndex < imagenSize; imagenIndex++) {
-        
-        let imagenByte = imagenDataView.getUint8(imagenIndex)
+        const imagenSize = imagenDataView.byteLength;
 
-        const imagenByteInBits = integerToBitArray(imagenByte)
+        const audioSize = audioDataView.byteLength;
 
-        for (let bit = 0; bit < 8; bit++) {
+        console.log(imagenSize);
 
-          let audioByte = audioDataView.getUint8(audioIndex);
+        console.log("audio size: ", audioSize);
 
-          let audioByteInBits = integerToBitArray(audioByte)
-      
-          audioByteInBits[7] = imagenByteInBits[bit]
-
-          audioByte = bitArrayToInteger(audioByteInBits)
-          // Guardar el byte de audio modificado
-          audioDataView.setUint8(audioIndex, audioByte);
-          
-          audioIndex += 2
-          
+        // Asegurarse de que la imagen se ajuste dentro del audio
+        if (imagenSize * 8 * 9 > audioSize) {
+          console.log(
+            "La imagen es demasiado grande para ocultarla en el audio."
+          );
+          return;
         }
 
-        
-      }
-      
-      // Guardar el archivo de audio modificado
-      const audioBlob = new Blob([audioDataView], { type: "audio/mp3"});
-      resolve(audioBlob)
-    };
-    audioReader.readAsArrayBuffer(audioFile);
-  };
-  imagenReader.readAsArrayBuffer(imagenFile);
-})
+        // Ocultar los bits de la imagen en los bits menos significativos del audio
+        let audioIndex = 0;
 
+        for (let imagenIndex = 0; imagenIndex < imagenSize; imagenIndex++) {
+          let imagenByte = imagenDataView.getUint8(imagenIndex);
+
+          const imagenByteInBits = integerToBitArray(imagenByte);
+
+          for (let bit = 0; bit < 8; bit++) {
+            let audioByte = audioDataView.getUint8(audioIndex);
+
+            let audioByteInBits = integerToBitArray(audioByte);
+
+            audioByteInBits[7] = imagenByteInBits[bit];
+
+            audioByte = bitArrayToInteger(audioByteInBits);
+            // Guardar el byte de audio modificado
+            audioDataView.setUint8(audioIndex, audioByte);
+
+            audioIndex += 2;
+            var memoryUsed = performance.memory.usedJSHeapSize;
+          }
+        }
+
+        // Guardar el archivo de audio modificado
+        const audioBlob = new Blob([audioDataView], { type: "audio/mp3" });
+        resolve({
+          watermarkedAudio: audioBlob,
+          memoryAfterWatermark: memoryUsed,
+        });
+      };
+      audioReader.readAsArrayBuffer(audioFile);
+    };
+    imagenReader.readAsArrayBuffer(imagenFile);
+  });
 }
 
 //no borrar
 export function extraerImagenDeAudio(audioFile) {
-return new Promise((resolve, reject) => {
-  const audioReader = new FileReader();
-  audioReader.onload = function(e) {
-    const audioArrayBuffer = e.target.result;
-    const audioDataView = new DataView(audioArrayBuffer);
-    
-    let imagenBytes = [];
+  return new Promise((resolve, reject) => {
+    const audioReader = new FileReader();
+    audioReader.onload = function (e) {
+      const audioArrayBuffer = e.target.result;
+      const audioDataView = new DataView(audioArrayBuffer);
 
-    let audioIndex = 0
+      let imagenBytes = [];
 
-    for (let byteImage = 0; byteImage < 1361; byteImage++){
+      let audioIndex = 0;
 
-      var imageByteArray = []
+      for (let byteImage = 0; byteImage < 1361; byteImage++) {
+        var imageByteArray = [];
 
-      for (let bit = 0; bit < 8; bit++) {
+        for (let bit = 0; bit < 8; bit++) {
+          var audioByte = audioDataView.getUint8(audioIndex);
 
-        var audioByte = audioDataView.getUint8(audioIndex);
+          var audioByteArray = integerToBitArray(audioByte);
 
-        var audioByteArray = integerToBitArray(audioByte)
+          imageByteArray.push(audioByteArray[7]);
 
-        imageByteArray.push(audioByteArray[7])
+          audioIndex += 2;
+        }
 
-        audioIndex += 2
-
+        imagenBytes.push(bitArrayToInteger(imageByteArray));
       }
 
-      imagenBytes.push(bitArrayToInteger(imageByteArray))
-    }
-    
-    // Convertir los bytes de imagen en un búfer y crear una URL para descargarlo
-    const imagenArrayBuffer = new Uint8Array(imagenBytes).buffer;
-    const imagenBlob = new Blob([imagenArrayBuffer], { type: 'image/png' });
-    const utl = URL.createObjectURL(imagenBlob)
-    resolve(utl)
-  };
-  audioReader.readAsArrayBuffer(audioFile);
-})
+      // Convertir los bytes de imagen en un búfer y crear una URL para descargarlo
+      const imagenArrayBuffer = new Uint8Array(imagenBytes).buffer;
+      const imagenBlob = new Blob([imagenArrayBuffer], { type: "image/png" });
+      const utl = URL.createObjectURL(imagenBlob);
+      resolve(utl);
+    };
+    audioReader.readAsArrayBuffer(audioFile);
+  });
+}
 
+export function saveOnCSVLoadValues(
+  nombreArchivo,
+  tiempoEncriptacion,
+  tiempoMarcaAgua,
+  tiempoContratos,
+  memoriaMarcaAgua,
+  memoriaEncriptacion
+) {
+  const data = {
+    nombreArchivo: nombreArchivo,
+    tiempoEncriptacion: tiempoEncriptacion,
+    tiempoContratos: tiempoContratos,
+    tiempoMarcaAgua: tiempoMarcaAgua,
+    memoriaMarcaAgua: memoriaMarcaAgua,
+    memoriaEncriptacion: memoriaEncriptacion,
+  };
+
+  fetch("http://localhost:3000/guardarCarga", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => response.text())
+    .then((message) => {
+      console.log(message); // Mensaje de respuesta del backend
+      // Aquí puedes realizar cualquier acción adicional después de enviar los datos
+    })
+    .catch((error) => {
+      console.error("Error al enviar los datos:", error);
+      // Aquí puedes manejar el error de acuerdo a tus necesidades
+    });
+}
+
+export function saveOnCSVDowloadValues(
+  nombreArchivo,
+  tiempoCompra,
+  tiempoObtenerInformacion,
+  tiempoDesencriptacion,
+  memoriaDesencriptacion
+) {
+  const data = {
+    nombreArchivo,
+    tiempoCompra,
+    tiempoObtenerInformacion,
+    tiempoDesencriptacion,
+    memoriaDesencriptacion,
+  };
+
+  fetch("http://localhost:3000/guardarDescarga", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => response.text())
+    .then((message) => {
+      console.log(message); // Mensaje de respuesta del backend
+      // Aquí puedes realizar cualquier acción adicional después de enviar los datos
+    })
+    .catch((error) => {
+      console.error("Error al enviar los datos:", error);
+      // Aquí puedes manejar el error de acuerdo a tus necesidades
+    });
+}
+
+export function obtenerNumeroAleatorio() {
+  return Math.floor(Math.random() * 16);
 }
