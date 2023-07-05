@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 const { ApiPromise, WsProvider, Keyring } = require("@polkadot/api");
 import { saveAs } from "file-saver";
 import { getEncriptionKey } from "../../helpers/serverRetriveKeys";
+import { index } from "mathjs";
 
 export default function downloadPage() {
   const [api, setApi] = useState();
@@ -15,9 +16,10 @@ export default function downloadPage() {
   const [downloadTextState, setDownloadTextState] = useState(
     "Esperando descarga...."
   );
-  var tiempoCompra = 0;
-  var indexContract = 0;
+  var tiempoCompra = 29;
+  const [indexContract, setIndex] = useState(24);
   let downloadAdress = "";
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     setup();
@@ -50,6 +52,12 @@ export default function downloadPage() {
   };
 
   const onButtonBuyPressed = async () => {
+    if (downloading) {
+      return;
+    }
+
+    setDownloading(true);
+
     downloadAdress = await keyHelper.getContractAddress(indexContract);
 
     //let params = new URLSearchParams(location.search);
@@ -64,10 +72,14 @@ export default function downloadPage() {
 
     if (isBought) {
       console.log("Ya has comprado este archivo");
+      setIndex(indexContract + 1);
+      console.log("nuevo indice: ", indexContract);
       return;
     }
 
     console.log("Archivo comprado");
+
+    await onButtonDownloadPressed();
   };
 
   const onButtonDownloadPressed = async () => {
@@ -131,7 +143,7 @@ export default function downloadPage() {
       "ms\nTiempo obtener info: ",
       timeCompleteGetInfo,
       "ms\nTiempo desencriptacion: ",
-      timeCompleteGetInfo,
+      timeCompleteDecryption,
       "ms\nConsumo de memoria desencriptacion: ",
       memoryDecryptionFinal,
       "MB"
@@ -145,7 +157,9 @@ export default function downloadPage() {
       memoryDecryptionFinal
     );
 
-    console.timeEnd("Tiempo descarga:");
+    setDownloading(false);
+    setIndex(indexContract + 1);
+    console.log("nuevo indice: ", indexContract);
   };
 
   const querySongAddress = async (contractAddress) => {

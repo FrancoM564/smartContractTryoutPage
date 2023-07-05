@@ -20,6 +20,7 @@ export default function Home() {
   const [buy, setBuy] = useState("");
   const [report, setReport] = useState("");
   const [songTitle, setSongTitle] = useState("");
+  const [numeroI, setNumeroI] = useState(1);
   var numeroIteracion = 1;
 
   useEffect(() => {
@@ -87,6 +88,8 @@ export default function Home() {
   }
 
   const publishProcess = async (key) => {
+    console.log("Iteracion actual: ", numeroI);
+
     setTitle("Aplicando marca de agua");
 
     const startTimeWaterMark = performance.now();
@@ -176,6 +179,8 @@ export default function Home() {
       memoryConsumedEncryption
     );
     await conect.saveContractAddressToCode(buyAddress, reportAddress, key);
+
+    setNumeroI(numeroI + 1);
   };
 
   const deploySmartContract = async (fileHashAddress, imageHashAddress) => {
